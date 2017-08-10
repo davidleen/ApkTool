@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.changdu.apkpackage.view.MainPanel">
+  <grid id="27dc6" binding="root" layout-manager="BorderLayout" hgap="0" vgap="0">
+    <constraints>
+      <xy x="20" y="20" width="513" height="508"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <splitpane id="5b834">
+        <constraints border-constraint="Center"/>
+        <properties>
+          <continuousLayout value="false"/>
+          <dividerLocation value="479"/>
+        </properties>
+        <border type="none"/>
+        <children>
+          <grid id="eb9b4" layout-manager="FormLayout">
+            <rowspec value="center:d:noGrow"/>
+            <rowspec value="top:4dlu:noGrow"/>
+            <rowspec value="center:max(d;4px):noGrow"/>
+            <rowspec value="top:4dlu:noGrow"/>
+            <rowspec value="center:max(d;4px):noGrow"/>
+            <rowspec value="top:4dlu:noGrow"/>
+            <rowspec value="center:max(d;4px):noGrow"/>
+            <rowspec value="top:4dlu:noGrow"/>
+            <rowspec value="center:max(d;4px):noGrow"/>
+            <rowspec value="top:4dlu:noGrow"/>
+            <rowspec value="center:max(d;4px):noGrow"/>
+            <rowspec value="top:4dlu:noGrow"/>
+            <rowspec value="center:max(d;4px):noGrow"/>
+            <rowspec value="top:4dlu:noGrow"/>
+            <rowspec value="center:25px:noGrow"/>
+            <rowspec value="top:4dlu:noGrow"/>
+            <rowspec value="center:max(d;4px):noGrow"/>
+            <rowspec value="top:4dlu:noGrow"/>
+            <rowspec value="center:max(d;60px):noGrow"/>
+            <rowspec value="top:4dlu:noGrow"/>
+            <rowspec value="center:max(d;4px):noGrow"/>
+            <colspec value="fill:d:grow"/>
+            <constraints>
+              <splitpane position="left"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <grid id="24772" layout-manager="BorderLayout" hgap="0" vgap="0">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <forms/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="5f2bb" class="javax.swing.JTextField" binding="tf_store_file">
+                    <constraints border-constraint="Center"/>
+                    <properties>
+                      <columns value="30"/>
+                    </properties>
+                  </component>
+                  <component id="25fd5" class="javax.swing.JButton" binding="pickStore">
+                    <constraints border-constraint="East"/>
+                    <properties>
+                      <text value="选择"/>
+                    </properties>
+                  </component>
+                  <component id="8a13d" class="javax.swing.JTextField" default-binding="true">
+                    <constraints border-constraint="West"/>
+                    <properties>
+                      <columns value="7"/>
+                      <editable value="false"/>
+                      <enabled value="true"/>
+                      <horizontalAlignment value="4"/>
+                      <text value="签名文件 "/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="d18b8" layout-manager="BorderLayout" hgap="0" vgap="0">
+                <constraints>
+                  <grid row="8" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <forms/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="725ed" class="javax.swing.JTextField" binding="tf_jdk">
+                    <constraints border-constraint="Center"/>
+                    <properties>
+                      <columns value="30"/>
+                    </properties>
+                  </component>
+                  <component id="66f56" class="javax.swing.JButton" binding="pickJDk">
+                    <constraints border-constraint="East"/>
+                    <properties>
+                      <text value="选择"/>
+                    </properties>
+                  </component>
+                  <component id="6ac47" class="javax.swing.JTextField" default-binding="true">
+                    <constraints border-constraint="West"/>
+                    <properties>
+                      <columns value="7"/>
+                      <editable value="false"/>
+                      <enabled value="true"/>
+                      <horizontalAlignment value="4"/>
+                      <text value="JDKHOME"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="6d6d7" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+                <constraints>
+                  <grid row="20" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <forms/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="458c0" class="javax.swing.JButton" binding="doPack">
+                    <constraints/>
+                    <properties>
+                      <text value="批量打包"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="7f086" layout-manager="BorderLayout" hgap="0" vgap="0">
+                <constraints>
+                  <grid row="10" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <forms/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="b8e65" class="javax.swing.JTextField" binding="tf_apk">
+                    <constraints border-constraint="Center"/>
+                    <properties>
+                      <columns value="30"/>
+                    </properties>
+                  </component>
+                  <component id="4d4b6" class="javax.swing.JButton" binding="pickApk">
+                    <constraints border-constraint="East"/>
+                    <properties>
+                      <text value="选择"/>
+                    </properties>
+                  </component>
+                  <component id="55ab4" class="javax.swing.JTextField" default-binding="true">
+                    <constraints border-constraint="West"/>
+                    <properties>
+                      <columns value="7"/>
+                      <editable value="false"/>
+                      <enabled value="true"/>
+                      <horizontalAlignment value="4"/>
+                      <text value="Apk路径"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="e5ff7" layout-manager="BorderLayout" hgap="0" vgap="0">
+                <constraints>
+                  <grid row="16" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <forms/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="e3ced" class="javax.swing.JTextField" binding="tf_pack">
+                    <constraints border-constraint="Center"/>
+                    <properties>
+                      <columns value="30"/>
+                    </properties>
+                  </component>
+                  <component id="e593d" class="javax.swing.JButton" binding="pickPack">
+                    <constraints border-constraint="East"/>
+                    <properties>
+                      <text value="选择"/>
+                    </properties>
+                  </component>
+                  <component id="f1d23" class="javax.swing.JTextField" default-binding="true">
+                    <constraints border-constraint="West"/>
+                    <properties>
+                      <columns value="7"/>
+                      <editable value="false"/>
+                      <enabled value="true"/>
+                      <horizontalAlignment value="4"/>
+                      <text value="打包配置路径"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="550b2" layout-manager="BorderLayout" hgap="0" vgap="0">
+                <constraints>
+                  <grid row="12" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <forms/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="77d15" class="javax.swing.JTextField" binding="tf_apk_tool">
+                    <constraints border-constraint="Center"/>
+                    <properties>
+                      <columns value="30"/>
+                    </properties>
+                  </component>
+                  <component id="58a88" class="javax.swing.JButton" binding="pickApkTool">
+                    <constraints border-constraint="East"/>
+                    <properties>
+                      <text value="选择"/>
+                    </properties>
+                  </component>
+                  <component id="a72f8" class="javax.swing.JTextField" default-binding="true">
+                    <constraints border-constraint="West"/>
+                    <properties>
+                      <columns value="7"/>
+                      <editable value="false"/>
+                      <enabled value="true"/>
+                      <horizontalAlignment value="4"/>
+                      <text value="APk工具路径"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="21ff2" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+                <constraints>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <forms/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="5b20a" class="javax.swing.JTextField" default-binding="true">
+                    <constraints/>
+                    <properties>
+                      <columns value="7"/>
+                      <editable value="false"/>
+                      <enabled value="true"/>
+                      <horizontalAlignment value="4"/>
+                      <text value="KeyPass"/>
+                    </properties>
+                  </component>
+                  <component id="ef83d" class="javax.swing.JTextField" binding="tf_keypass">
+                    <constraints/>
+                    <properties>
+                      <columns value="20"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="bfcfd" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+                <constraints>
+                  <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <forms/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="79795" class="javax.swing.JTextField" default-binding="true">
+                    <constraints/>
+                    <properties>
+                      <columns value="7"/>
+                      <editable value="false"/>
+                      <enabled value="true"/>
+                      <horizontalAlignment value="4"/>
+                      <text value="Alias"/>
+                    </properties>
+                  </component>
+                  <component id="9c039" class="javax.swing.JTextField" binding="tf_alias">
+                    <constraints/>
+                    <properties>
+                      <columns value="20"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="4546f" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+                <constraints>
+                  <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <forms/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="c38d4" class="javax.swing.JTextField" default-binding="true">
+                    <constraints/>
+                    <properties>
+                      <columns value="7"/>
+                      <editable value="false"/>
+                      <enabled value="true"/>
+                      <horizontalAlignment value="4"/>
+                      <text value="StorePass"/>
+                    </properties>
+                  </component>
+                  <component id="2aa0d" class="javax.swing.JTextField" binding="tf_store_pass">
+                    <constraints/>
+                    <properties>
+                      <columns value="20"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="899a8" layout-manager="BorderLayout" hgap="0" vgap="0">
+                <constraints>
+                  <grid row="18" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <forms defaultalign-vert="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="8dea0" class="javax.swing.JTextArea" binding="ta_packages">
+                    <constraints border-constraint="Center"/>
+                    <properties>
+                      <lineWrap value="true"/>
+                    </properties>
+                  </component>
+                  <component id="faaa2" class="javax.swing.JTextField" default-binding="true">
+                    <constraints border-constraint="West"/>
+                    <properties>
+                      <columns value="7"/>
+                      <editable value="false"/>
+                      <enabled value="true"/>
+                      <horizontalAlignment value="4"/>
+                      <text value="包名列表"/>
+                    </properties>
+                  </component>
+                  <component id="9a9bc" class="javax.swing.JLabel">
+                    <constraints border-constraint="South"/>
+                    <properties>
+                      <text value="                   说明:打包配置路径下的每一个字文件夹的名称,都作为新生成apk的包名."/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <vspacer id="68dda">
+                <constraints>
+                  <grid row="14" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                  <forms defaultalign-vert="false"/>
+                </constraints>
+              </vspacer>
+            </children>
+          </grid>
+          <grid id="39018" layout-manager="BorderLayout" hgap="0" vgap="0">
+            <constraints>
+              <splitpane position="right"/>
+            </constraints>
+            <properties/>
+            <border type="none" title="输出显示"/>
+            <children>
+              <scrollpane id="480b0">
+                <constraints border-constraint="Center"/>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="85b87" class="javax.swing.JTextArea" binding="tf_output">
+                    <constraints/>
+                    <properties>
+                      <lineWrap value="true"/>
+                    </properties>
+                  </component>
+                </children>
+              </scrollpane>
+            </children>
+          </grid>
+        </children>
+      </splitpane>
+    </children>
+  </grid>
+</form>
