@@ -61,7 +61,7 @@ public class DomXml {
             StreamResult result = new StreamResult(new File(filePath));
             transformer.transform(source, result);
 
-            System.out.println("Done");
+
         } catch (TransformerConfigurationException e) {
             e.printStackTrace();
         } catch (TransformerException e) {

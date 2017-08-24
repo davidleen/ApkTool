@@ -124,8 +124,12 @@ public class FileUtil {
 
     }
 
+
+    public static void deleteAllFiles(String filePath) {
+        deleteFile(new File(filePath));
+    }
+
     /**
-     *
      * @param file
      */
     public static void deleteFile(File file) {

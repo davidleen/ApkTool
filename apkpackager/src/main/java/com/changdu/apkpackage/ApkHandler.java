@@ -4,10 +4,9 @@ import com.changdu.apkpackage.dom.StringUtil;
 import com.changdu.apkpackage.entity.ConfigData;
 import com.changdu.apkpackage.utlis.FileUtil;
 
-import java.io.*;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Created by davidleen29 on 2017/8/7.
@@ -22,115 +21,87 @@ public class ApkHandler {
     String alias;
 
 
-    //解析生成的临时文件夹， 完成后 移除
-    public static String tempFileDirectory = "";
-    public String apkToolDirectory = "E:\\开发工具\\反编译\\";
+    public String apkToolDirectory;
 
 
     public static final String RELATIVE_PATH_JAR_SIGN = "bin/jarsigner.exe";
 
 
     private String jarSignerPath;
-    private OutputStream outputStream;
-
-    /**
-     * apk原包所在的文件夹
-     */
-    private String apkDirectory = "";
 
 
-
-    /**
-     * apk生成包所在的文件夹
-     */
-    private String apkDestDirectory = "";
-
-    public String apkName = "";
-    public String apkPath;
+    private IPrintable iPrintable;
 
 
-    ApkResourceHandler apkResourceHandler;
-    /**
-     * 指定property文件
-     */
-    private static final String PROPERTY_FILE = "cmds/apk.properties";
     private static String DECODE = "apktool d -f %s  -o %s";
     private static String BUNDLE_UP = "apktool b   %s ";
 
     //签名处理。jarsigner -verbose -keystore PATH/TO/YOUR_RELEASE_KEY.keystore -storepass YOUR_STORE_PASS -keypass YOUR_KEY_PASS PATH/TO/YOUR_UNSIGNED_PROJECT.apk YOUR_ALIAS_NAME
-    private static String SIGN = "  -verbose -keystore %s  -storepass %s -keypass %s   %s   %s    ";
-
-//    static {
-//        Properties properties = new Properties();
-//        ClassLoader classLoader = ApkHandler.class.getClassLoader();
-//        InputStream resourceAsStream = classLoader.getResourceAsStream(PROPERTY_FILE);
-//        try {
-//            properties.load(resourceAsStream);
-//
-//            //  BUNDLE_UP = properties.getProperty("bundleup");
-//
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-    private String destApkPath;
+    private static String SIGN = " -sigalg MD5withRSA     -digestalg SHA1  -keystore %s  -storepass %s -keypass %s   %s   %s  -signedjar %s   ";  // -verbose
 
 
-    public ApkHandler(ConfigData configData, OutputStream outputStream) {
-        this.apkPath = configData.apkFilePath;
+    /**
+     * 是否输出命令执行详情
+     */
+    private boolean showCommandDetail = false;
+
+
+    public ApkHandler(ConfigData configData, IPrintable iPrintable) {
+
+        this(configData, iPrintable, false);
+    }
+
+
+    public ApkHandler(ConfigData configData, IPrintable iPrintable, boolean showCommandDetail) {
+
         this.keystorePath = configData.keyStoreFilePath;
         this.apkToolDirectory = configData.apkToolPath;
         jarSignerPath = configData.jdkHomePath + RELATIVE_PATH_JAR_SIGN;
-        this.outputStream = outputStream;
-        File apkPathFile = new File(apkPath);
-        apkName = apkPathFile.getName();
-        apkDirectory = apkPathFile.getParent();
-        apkDestDirectory=apkDirectory+File.separator+"dest"+File.separator;
-        tempFileDirectory = apkDirectory + "\\temp";
+        this.iPrintable = iPrintable;
+
 
         key_pass = configData.keypass;
         store_pass = configData.storepass;
         alias = configData.alias;
 
-        apkResourceHandler = new ApkResourceHandler(tempFileDirectory);
 
-//        OutputStream outputStream=new OutputStream() {
-//                @Override
-//                public void write(int i) throws IOException {
-//                    JLabel jLabel=new JLabel();
-//                    jLabel.setText(i);
-//                }
-//        };
-
-
+        this.showCommandDetail = showCommandDetail;
     }
 
     /**
      * 反编译处理。
      */
-    public final void deCompile() throws CmdExecuteException {
+    public final void deCompile(String apkFilePath, String decompileOutputDirectory) throws CmdExecuteException {
 
 //
-        String cmd = apkToolDirectory + String.format(DECODE, apkPath, tempFileDirectory);
 
+        String tempFileDirectory = decompileOutputDirectory;
+
+        String cmd = apkToolDirectory + String.format(DECODE, apkFilePath, tempFileDirectory);
 
         printMessage("解包", cmd);
 
-        Command.executeCmd(new String[]{cmd}, outputStream);
+        Command.executeCmd(new String[]{cmd}, iPrintable);
 
 
     }
 
-    public void replaceRes(File file) {
-
-        apkResourceHandler.replace(file);
+    public void replaceRes(File packConfigFilePath, String apkDecompiledTempFilePath) {
+        ApkResourceHandler apkResourceHandler = new ApkResourceHandler(apkDecompiledTempFilePath);
+        apkResourceHandler.replace(packConfigFilePath);
 
 
     }
 
 
-    public void bundleUp() throws CmdExecuteException {
+    /**
+     * 生成apk包，
+     *
+     * @param tempFileDirectory 解包后apk相关文件所在的文件夹
+     * @return 生成的apk包路径（未签名）
+     * @throws CmdExecuteException
+     */
+    public void bundleUp(String tempFileDirectory) throws CmdExecuteException {
 
 
         String cmd = apkToolDirectory + String.format(BUNDLE_UP, tempFileDirectory);
@@ -138,7 +109,7 @@ public class ApkHandler {
         printMessage("打包", cmd);
 
 
-        Command.executeCmd(new String[]{cmd}, outputStream);
+        Command.executeCmd(new String[]{cmd}, iPrintable);
 
 
     }
@@ -147,15 +118,22 @@ public class ApkHandler {
     /**
      * 签名处理。
      */
-    public void signUp() throws CmdExecuteException {
+    public String signUp(String unSignedApkPath) throws CmdExecuteException {
 
 
-        String apkPath = tempFileDirectory + "\\dist\\" + apkName;
+        String apkPath = unSignedApkPath;
+
+        String resultFileName = splitFileName(apkPath, "_signed");
+
+
+        File resultFile = new File(resultFileName);
+        if (resultFile.exists()) resultFile.delete();
+
 //        String path = "E:/Program Files/Java/jdk1.7.0_80/bin/jarsigner.exe";
 //        //  String path = "jarsigner.exe";
         String path = jarSignerPath;
 
-        String cmd = String.format(SIGN, keystorePath, key_pass, store_pass, apkPath, alias);
+        String cmd = String.format(((showCommandDetail ? " -verbose " : "") + SIGN), keystorePath, key_pass, store_pass, apkPath, alias, resultFileName);
         String[] array = cmd.split(" ");
         List<String> commandList = new ArrayList<>();
         commandList.add(path);
@@ -166,36 +144,32 @@ public class ApkHandler {
 
         printMessage("签名", commandList);
 
-        Command.execute(commandList, outputStream);
-    }
+        Command.execute(commandList, iPrintable);
 
-
-    private List<String> combineComandToList(String command, String params) {
-        String[] array = params.split(" ");
-        List<String> commandList = new ArrayList<>();
-        commandList.add(command);
-
-        for (String temp : array) {
-            commandList.add(temp);
-        }
-
-        return commandList;
+        return resultFileName;
     }
 
 
     /**
      * 签名后的包 对齐
+     *
+     * @param apkFilePath 对齐前包路径
+     * @return 对齐后包路径
+     * @throws CmdExecuteException
      */
-    public void zipAlign() throws CmdExecuteException {
+    public String zipAlign(String apkFilePath) throws CmdExecuteException {
 
 
         String alignCmdPath = apkToolDirectory + "zipalign.exe";
-        String apkPath = tempFileDirectory + "\\dist\\" + apkName;
-        String[] split = apkName.split("\\.");
-        destApkPath = tempFileDirectory + "\\dist\\" + split[0] + "_aligned" + "." + split[1];
 
-        //  String path = "jarsigner.exe";
-        String cmd = "    -v 4  " + apkPath + "  " + destApkPath;
+        String zipAlignedFilePath = splitFileName(apkFilePath, "_aligned");
+
+        File file
+                = new File(zipAlignedFilePath);
+        if (file.exists()) file.delete();
+
+
+        String cmd = (showCommandDetail ? " -v " : "") + "   4  " + apkFilePath + "  " + zipAlignedFilePath;  //
         String[] array = cmd.split(" ");
         List<String> commandList = new ArrayList<>();
         commandList.add(alignCmdPath);
@@ -206,42 +180,58 @@ public class ApkHandler {
         printMessage("对齐", commandList);
 
 
-        Command.execute(commandList, outputStream);
+        Command.execute(commandList, iPrintable);
+
+
+        return zipAlignedFilePath;
+
+    }
+
+
+    public static String splitFileName(String filePath, String appendixFileName) {
+
+        int index = filePath.lastIndexOf(".");
+        if (index > -1) {
+
+
+            return filePath.substring(0, index) + appendixFileName + filePath.substring(index);
+
+        } else
+            throw new RuntimeException("非法文件路径名称" + filePath);
+
 
     }
 
 
     private void printMessage(String messageName, String cmd) {
-        PrintWriter pw = getPrintWriter();
-        pw.println("=================execute command 执行命令  " + messageName + " ========================================");
-        pw.println(cmd);
-        pw.flush();
+
+        iPrintable.println("=================execute command 执行命令  " + messageName + " ========================================");
+        iPrintable.println(cmd);
 
 
     }
 
     private void printMessage(String messageName, List<String> commandList) {
-        PrintWriter pw = getPrintWriter();
 
-        pw.println("=================execute command 执行命令  " + messageName + " ========================================");
 
+        iPrintable.println("=================execute command 执行命令  " + messageName + " ========================================");
+        iPrintable.println();
         for (String item : commandList) {
 
-            pw.print(item + " ");
+            iPrintable.print(item + " ");
         }
-        pw.println();
-        pw.flush();
+        iPrintable.println();
+
 
     }
 
-    public void move(File packFile) {
+    public void move(String srcFilePath, String destFilePath) {
 
 
-        if (!StringUtil.isEmpty(destApkPath)) {
-            File file = new File(destApkPath);
-            printMessage(destApkPath + ",exist:" + file.exists());
-            File dest = new File(apkDestDirectory+packFile.getName() + ".apk");
+        if (!StringUtil.isEmpty(srcFilePath)) {
+            File dest = new File(destFilePath);
 
+            File file = new File(srcFilePath);
             if (dest.exists()) {
                 dest.delete();
             } else {
@@ -258,41 +248,40 @@ public class ApkHandler {
 
     private void printMessage(String message) {
 
-        PrintWriter pw = getPrintWriter();
-        pw.println(message);
-        pw.flush();
+        iPrintable.println(message);
 
 
     }
 
-
-    PrintWriter printWriter ;
-    private PrintWriter getPrintWriter()
-    {
-
-        if(printWriter==null)
-        {
-            printWriter=new PrintWriter(outputStream);
-        }
-        return printWriter;
-
-
-    }
 
     /**
      * 清理现场
      */
-    public void clear() {
-        printMessage("==================清除临时文件============"+tempFileDirectory);
-        if (!StringUtil.isEmpty(tempFileDirectory)) {
+    public void clear(String outputDirectory) {
 
-            FileUtil.deleteFile(new File(tempFileDirectory));
 
-        }
-
-        printMessage("==================打包后文件存放在  "+apkDestDirectory+",总共"+new File(apkDestDirectory).listFiles().length+",个包============");
+        printMessage("==================打包后文件存放在  " + outputDirectory + ",总共" + new File(outputDirectory).listFiles().length + ",个包============");
 
 
         printMessage("==================批量打包结束================");
+    }
+
+    public void changeVersionCodeAndName(String apkDecompiledTempFilePath, String newVersionCode, String newVersionName) {
+
+        printMessage("==================修改版本号================");
+        ApkResourceHandler apkResourceHandler = new ApkResourceHandler(apkDecompiledTempFilePath);
+        apkResourceHandler.changeVersionCodeAndName(newVersionCode, newVersionName);
+
+
+
+    }
+
+
+    public void changePackageName(String apkDecompiledTempFilePath, String newPackageName) {
+
+        printMessage("==================修改版包名================");
+        ApkResourceHandler apkResourceHandler = new ApkResourceHandler(apkDecompiledTempFilePath);
+        apkResourceHandler.changePackageName(newPackageName);
+
     }
 }
