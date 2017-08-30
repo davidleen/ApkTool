@@ -215,8 +215,34 @@ public class MainFrame extends JFrame {
 
             }
         });
+        menuItem = new JMenuItem("打包APK包");
+
+        menu.add(menuItem);
+
+        menuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
 
 
+                bundleUpApk();
+
+
+            }
+        });
+        menuItem = new JMenuItem("查看签名信息");
+
+        menu.add(menuItem);
+
+        menuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+
+                viewSignInfo();
+
+
+            }
+        });
         setJMenuBar(menuBar);
     }
 
@@ -427,6 +453,44 @@ public class MainFrame extends JFrame {
     }
 
 
+    /**
+     * 查看签名信息
+     */
+   public void  viewSignInfo()
+   {
+       if ( StringUtil.isEmpty(configData.keyStoreFilePath)) {
+           mainPanel.showMessage("签名文件未选择");
+           return ;
+
+       }
+
+       preWork();
+
+
+
+       new Thread()
+       {
+
+           public void run()
+           {
+
+               ApkHandler apkHandler = new ApkHandler(configData, printJob);
+
+               printJob.println();
+
+               try {
+                   apkHandler.viewSignInfo();
+               } catch (CmdExecuteException e) {
+                   e.printStackTrace();
+               }
+
+               mainPanel.setEdiable(true);
+
+           }
+       }.start();
+   }
+
+
     private void doNormalInThread(final MainPanel.Options options) {
 
         mainPanel.setEdiable(false);
@@ -633,9 +697,12 @@ public class MainFrame extends JFrame {
                     //循环打包
                     for (File file : files) {
                         // 资源替换  修改包名
+                        printJob.println("资源替换");
                         apkHandler.replaceRes(file, apkDecompiledDirectory);
-                        printJob.print();
+
                         if (options.changeVersion) {
+
+                            printJob.println("修改版本号");
                             apkHandler.changeVersionCodeAndName(apkDecompiledDirectory, mainPanel.getVersionCode(), mainPanel.getVersionName());
 
                         }
@@ -710,7 +777,7 @@ public class MainFrame extends JFrame {
                             e.printStackTrace();
                         }
                     }
-
+                    mainPanel.setEdiable(true);
 
                 } catch (CmdExecuteException e) {
 

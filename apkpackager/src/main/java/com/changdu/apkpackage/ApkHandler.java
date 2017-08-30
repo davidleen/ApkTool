@@ -22,9 +22,11 @@ public class ApkHandler {
 
 
     public String apkToolDirectory;
+    private String jdkHome;
 
 
     public static final String RELATIVE_PATH_JAR_SIGN = "bin/jarsigner.exe";
+    public static final String RELATIVE_PATH_KEY_TOOL = "bin/keytool.exe";
 
 
     private String jarSignerPath;
@@ -35,6 +37,7 @@ public class ApkHandler {
 
     private static String DECODE = "apktool d -f %s  -o %s";
     private static String BUNDLE_UP = "apktool b   %s ";
+
 
     //签名处理。jarsigner -verbose -keystore PATH/TO/YOUR_RELEASE_KEY.keystore -storepass YOUR_STORE_PASS -keypass YOUR_KEY_PASS PATH/TO/YOUR_UNSIGNED_PROJECT.apk YOUR_ALIAS_NAME
     private static String SIGN = " -sigalg MD5withRSA     -digestalg SHA1  -keystore %s  -storepass %s -keypass %s   %s   %s  -signedjar %s   ";  // -verbose
@@ -56,6 +59,7 @@ public class ApkHandler {
 
         this.keystorePath = configData.keyStoreFilePath;
         this.apkToolDirectory = configData.apkToolPath;
+        jdkHome = configData.jdkHomePath;
         jarSignerPath = configData.jdkHomePath + RELATIVE_PATH_JAR_SIGN;
         this.iPrintable = iPrintable;
 
@@ -273,7 +277,6 @@ public class ApkHandler {
         apkResourceHandler.changeVersionCodeAndName(newVersionCode, newVersionName);
 
 
-
     }
 
 
@@ -282,6 +285,36 @@ public class ApkHandler {
         printMessage("==================修改版包名================");
         ApkResourceHandler apkResourceHandler = new ApkResourceHandler(apkDecompiledTempFilePath);
         apkResourceHandler.changePackageName(newPackageName);
+
+    }
+
+
+
+    private static String VIEW_SIGN = "  -list  -v -keystore   %s     -storepass  %s  -alias %s ";
+    /**
+     * 查看签名文件信息
+     */
+    public void viewSignInfo() throws CmdExecuteException {
+
+
+        printMessage("==================查看签名文件信息================");
+
+
+        String path = jdkHome + RELATIVE_PATH_KEY_TOOL;
+
+        String cmd = String.format(VIEW_SIGN, keystorePath,  store_pass, alias);
+        String[] array = cmd.split(" ");
+        List<String> commandList = new ArrayList<>();
+        commandList.add(path);
+        for (String temp : array) {
+            commandList.add(temp);
+        }
+
+
+        printMessage("查看签名文件信息", commandList);
+
+        Command.execute(commandList, iPrintable);
+
 
     }
 }
