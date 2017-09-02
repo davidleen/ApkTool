@@ -80,6 +80,12 @@ public class MainPanel implements TextView {
                 boolean selected = cb_version.isSelected();
                 panel_change_version.setVisible(selected);
 
+                if(selected)
+                {
+                    cb_sign.setSelected(true);
+                    cb_align.setSelected(true);
+                }
+
             }
         });
         cb_version.setSelected(false);
@@ -89,7 +95,14 @@ public class MainPanel implements TextView {
         cb_packageName.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                panel_package.setVisible(cb_packageName.isSelected());
+                boolean selected = cb_packageName.isSelected();
+                panel_package.setVisible(selected);
+                if(selected)
+                {
+                    cb_sign.setSelected(true);
+                    cb_align.setSelected(true);
+                }
+
             }
         });
         cb_packageName.setSelected(false);

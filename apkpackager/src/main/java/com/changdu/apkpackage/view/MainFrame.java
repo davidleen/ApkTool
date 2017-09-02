@@ -215,20 +215,7 @@ public class MainFrame extends JFrame {
 
             }
         });
-        menuItem = new JMenuItem("打包APK包");
 
-        menu.add(menuItem);
-
-        menuItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-
-                bundleUpApk();
-
-
-            }
-        });
         menuItem = new JMenuItem("查看签名信息");
 
         menu.add(menuItem);

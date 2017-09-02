@@ -40,8 +40,8 @@ public class ApkHandler {
 
 
     //签名处理。jarsigner -verbose -keystore PATH/TO/YOUR_RELEASE_KEY.keystore -storepass YOUR_STORE_PASS -keypass YOUR_KEY_PASS PATH/TO/YOUR_UNSIGNED_PROJECT.apk YOUR_ALIAS_NAME
-    private static String SIGN = " -sigalg MD5withRSA     -digestalg SHA1  -keystore %s  -storepass %s -keypass %s   %s   %s  -signedjar %s   ";  // -verbose
-
+     private static String SIGN = " -sigalg MD5withRSA     -digestalg SHA1  -keystore %s  -storepass %s -keypass %s   %s   %s  -signedjar %s   ";  // -verbose
+// private static String SIGN = " -sigalg SHA256withRSA     -digestalg SHA1  -keystore %s  -storepass %s -keypass %s   %s   %s  -signedjar %s   ";  // -verbose
 
     /**
      * 是否输出命令执行详情
@@ -149,6 +149,30 @@ public class ApkHandler {
         printMessage("签名", commandList);
 
         Command.execute(commandList, iPrintable);
+
+
+        //验证签名
+
+
+
+
+          cmd = String.format(  " -verify    -certs %s",   resultFileName);
+         array = cmd.split(" ");
+         commandList = new ArrayList<>();
+        commandList.add(path);
+        for (String temp : array) {
+            commandList.add(temp);
+        }
+
+
+        printMessage("验证签名", commandList);
+
+        Command.execute(commandList, iPrintable);
+
+
+
+
+
 
         return resultFileName;
     }

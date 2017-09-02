@@ -476,6 +476,7 @@
                     <constraints border-constraint="Center"/>
                     <properties>
                       <columns value="30"/>
+                      <toolTipText value="包名格式必须是  xxx(.xxx)+"/>
                     </properties>
                   </component>
                   <component id="f93a6" class="javax.swing.JTextField" default-binding="true">

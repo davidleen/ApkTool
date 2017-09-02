@@ -252,6 +252,44 @@ public class ApkResourceHandler {
 
     }
 
+
+
+
+
+
+
+    /**
+     * 替换manifest内的applcation下的数据
+     */
+    public void updateAndroidManifest(String newPackageName) {
+
+
+        String manifestFilePath = apkFileDirectory + File.separator + ANDROID_MANIFEST_XML;
+        DomXml domXml = new DomXml(manifestFilePath);
+
+
+        Document doc = domXml.openFile();
+
+        if (doc != null) {
+            Node manifest = doc.getFirstChild();
+            if (manifest != null && manifest.hasAttributes()) {
+                NamedNodeMap attr = manifest.getAttributes();
+                Node nodeAttr = attr.getNamedItem(ATTR_PACKAGE);
+                nodeAttr.setTextContent(newPackageName);
+            }
+
+        }
+        domXml.saveFile(doc);
+
+
+        domXml.close();
+
+
+    }
+
+
+
+
     public void changeVersionCodeAndName(String newVersionCode, String newVersionName) {
 
 
