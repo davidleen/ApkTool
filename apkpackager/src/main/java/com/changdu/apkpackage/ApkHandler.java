@@ -51,7 +51,7 @@ public class ApkHandler {
 
     public ApkHandler(ConfigData configData, IPrintable iPrintable) {
 
-        this(configData, iPrintable, false);
+        this(configData, iPrintable, true);
     }
 
 
@@ -92,7 +92,13 @@ public class ApkHandler {
 
     public void replaceRes(File packConfigFilePath, String apkDecompiledTempFilePath) {
         ApkResourceHandler apkResourceHandler = new ApkResourceHandler(apkDecompiledTempFilePath);
-        apkResourceHandler.replace(packConfigFilePath);
+        try {
+            apkResourceHandler.replace(packConfigFilePath);
+        } catch (CmdExecuteException e) {
+            e.printStackTrace();
+            printMessage("---------------warning--------------------");
+            printMessage(e.getMessage());
+        }
 
 
     }
