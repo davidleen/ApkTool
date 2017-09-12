@@ -1,25 +1,36 @@
 apply plugin: 'java'
+
 apply plugin: 'application'
 
 compileJava.options.encoding = 'UTF-8'
-mainClassName="com.changdu.apkpackage.Main"
+mainClassName = "com.changdu.apkpackage.Main"
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-   compile group: 'com.jgoodies', name: 'forms', version: '1.2.1'
+
 
 }
+
+
 tasks.withType(org.gradle.api.tasks.compile.JavaCompile) {
     options.encoding = 'UTF-8'
 }
 jar.manifest.attributes 'Main-Class': mainClassName
+
 jar {
+
+
     baseName = 'apkpackage'
     version = '0.1.0'
 
 }
 
+
+
 repositories {
+    jcenter()
     mavenCentral()
+
 }
 
 

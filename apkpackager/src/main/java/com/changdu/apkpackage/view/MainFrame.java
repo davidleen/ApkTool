@@ -1,9 +1,6 @@
 package com.changdu.apkpackage.view;
 
-import com.changdu.apkpackage.ApkHandler;
-import com.changdu.apkpackage.ApkPrintJob;
-import com.changdu.apkpackage.CmdExecuteException;
-import com.changdu.apkpackage.IPrintable;
+import com.changdu.apkpackage.*;
 import com.changdu.apkpackage.dom.StringUtil;
 import com.changdu.apkpackage.entity.ConfigData;
 import com.changdu.apkpackage.utlis.FileUtil;
@@ -292,7 +289,7 @@ public class MainFrame extends JFrame {
                     ;
         }
 
-        if(options==null) return true;
+        if (options == null) return true;
 
         if (options.sign && StringUtil.isEmpty(configData.keyStoreFilePath)) {
             mainPanel.showMessage("签名文件未选择");
@@ -331,15 +328,13 @@ public class MainFrame extends JFrame {
 
 
         mainPanel.setEdiable(false);
-        new Thread()
-        {
+        new Thread() {
 
-            public void run()
-            {
+            public void run() {
 
                 ApkHandler apkHandler = new ApkHandler(configData, printJob);
 
-                printJob.println("开始解包:"+configData.apkFilePath);
+                printJob.println("开始解包:" + configData.apkFilePath);
                 printJob.print();
 
                 File apkFile = new File(configData.apkFilePath);
@@ -360,7 +355,7 @@ public class MainFrame extends JFrame {
 
                 }
 
-                printJob.println("解包成功，路径："+apkDecompiledDirectory);
+                printJob.println("解包成功，路径：" + apkDecompiledDirectory);
 
                 int option = JOptionPane.showConfirmDialog(MainFrame.this, "文件路径在:\n" + apkDecompiledDirectory + ",  \n是否前往文件夹?", "操作成功", JOptionPane.YES_NO_OPTION);
                 if (option == JOptionPane.OK_OPTION) {
@@ -377,7 +372,6 @@ public class MainFrame extends JFrame {
         }.start();
 
 
-
     }
 
     /**
@@ -388,25 +382,22 @@ public class MainFrame extends JFrame {
         if (!checkFirst(null)) return;
 
 
-        new Thread()
-        {
+        new Thread() {
 
-            public void run()
-            {
+            public void run() {
 
                 ApkHandler apkHandler = new ApkHandler(configData, printJob);
 
-                printJob.println("开始打包:"+configData.apkFilePath);
+                printJob.println("开始打包:" + configData.apkFilePath);
                 printJob.print();
 
                 File apkFile = new File(configData.apkFilePath);
                 String apkDecompiledDirectory = apkFile.getParent() + File.separator + "temp" + File.separator;
 
-                if(!new File(apkDecompiledDirectory).exists())
-                {
-                    showMessage("apkapk解压后的文件夹不存在:"+apkDecompiledDirectory);
-                    return ;
-             }
+                if (!new File(apkDecompiledDirectory).exists()) {
+                    showMessage("apkapk解压后的文件夹不存在:" + apkDecompiledDirectory);
+                    return;
+                }
 
                 try {
                     apkHandler.bundleUp(apkDecompiledDirectory);
@@ -421,7 +412,7 @@ public class MainFrame extends JFrame {
                     return;
                 }
 
-                printJob.println("打包apk成功，路径："+unSignApkFilePath);
+                printJob.println("打包apk成功，路径：" + unSignApkFilePath);
 
                 int option = JOptionPane.showConfirmDialog(MainFrame.this, "文件路径在:\n" + unSignApkFilePath + ",  \n是否前往文件夹?", "操作成功", JOptionPane.YES_NO_OPTION);
                 if (option == JOptionPane.OK_OPTION) {
@@ -443,39 +434,35 @@ public class MainFrame extends JFrame {
     /**
      * 查看签名信息
      */
-   public void  viewSignInfo()
-   {
-       if ( StringUtil.isEmpty(configData.keyStoreFilePath)) {
-           mainPanel.showMessage("签名文件未选择");
-           return ;
+    public void viewSignInfo() {
+        if (StringUtil.isEmpty(configData.keyStoreFilePath)) {
+            mainPanel.showMessage("签名文件未选择");
+            return;
 
-       }
+        }
 
-       preWork();
-
+        preWork();
 
 
-       new Thread()
-       {
+        new Thread() {
 
-           public void run()
-           {
+            public void run() {
 
-               ApkHandler apkHandler = new ApkHandler(configData, printJob);
+                ApkHandler apkHandler = new ApkHandler(configData, printJob);
 
-               printJob.println();
+                printJob.println();
 
-               try {
-                   apkHandler.viewSignInfo();
-               } catch (CmdExecuteException e) {
-                   e.printStackTrace();
-               }
+                try {
+                    apkHandler.viewSignInfo();
+                } catch (CmdExecuteException e) {
+                    e.printStackTrace();
+                }
 
-               mainPanel.setEdiable(true);
+                mainPanel.setEdiable(true);
 
-           }
-       }.start();
-   }
+            }
+        }.start();
+    }
 
 
     private void doNormalInThread(final MainPanel.Options options) {
@@ -540,16 +527,17 @@ public class MainFrame extends JFrame {
 
                 }
 
+                ApkResourceHandler apkResourceHandler = new ApkResourceHandler(apkDecompiledDirectory, printJob);
 
                 if (options.changePackage) {
                     String packageName = mainPanel.getPackageName();
 
-                    apkHandler.changePackageName(apkDecompiledDirectory, packageName);
+                    apkResourceHandler.changePackageName(packageName);
                 }
                 if (options.changeVersion) {
                     String newVersionCode = mainPanel.getVersionCode();
                     String newVersionName = mainPanel.getVersionName();
-                    apkHandler.changeVersionCodeAndName(apkDecompiledDirectory, newVersionCode, newVersionName);
+                    apkResourceHandler.changeVersionCodeAndName(newVersionCode, newVersionName);
                 }
 
                 apkHandler.bundleUp(apkDecompiledDirectory);
@@ -657,6 +645,8 @@ public class MainFrame extends JFrame {
                 printJob.println("=============执行多产品打包处理====================");
                 printJob.println();
                 ApkHandler apkHandler = new ApkHandler(configData, printJob);
+
+
 //                //第一步 反编译
                 try {
 
@@ -681,16 +671,24 @@ public class MainFrame extends JFrame {
 
 
                     File[] files = new File(configData.apkPackPath).listFiles();
+
+                    ApkResourceHandler apkResourceHandler = new ApkResourceHandler(apkDecompiledDirectory, printJob);
                     //循环打包
                     for (File file : files) {
+
+                        if (!file.isDirectory()) continue;
+
+
+                        apkResourceHandler.resetResources();
+
                         // 资源替换  修改包名
                         printJob.println("资源替换");
-                        apkHandler.replaceRes(file, apkDecompiledDirectory);
+
+
+                        apkResourceHandler.replace(file);
 
                         if (options.changeVersion) {
-
-                            printJob.println("修改版本号");
-                            apkHandler.changeVersionCodeAndName(apkDecompiledDirectory, mainPanel.getVersionCode(), mainPanel.getVersionName());
+                            apkResourceHandler.changeVersionCodeAndName(mainPanel.getVersionCode(), mainPanel.getVersionName());
 
                         }
 
@@ -705,6 +703,9 @@ public class MainFrame extends JFrame {
                             showMessage("apk重新打包失败");
                             return;
                         }
+
+
+
 
                         //执行签名
                         String outPutFile = unSignApkFilePath;

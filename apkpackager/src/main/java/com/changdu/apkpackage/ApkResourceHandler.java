@@ -5,14 +5,14 @@ import com.changdu.apkpackage.dom.StringUtil;
 import com.changdu.apkpackage.utlis.FileUtil;
 import org.w3c.dom.*;
 
-import java.io.File;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Set;
 
 /**
- * 资源替换处理类   对values 的数据   目前不支持国际化配置。
+ * 资源替换处理类
  * <p/>
  * Created by davidleen29 on 2017/8/8.
  */
@@ -31,11 +31,17 @@ public class ApkResourceHandler {
      * res资源路径
      */
 
-    public static final String RES_VALUES_DIRECTORY = RES + File.separator + "values" ;
+    public static final String RES_VALUES_DIRECTORY = RES + File.separator + "values";
     private static final String APPLICATION = "application";
+
+    /**
+     * 备份文件文件夹名称， 长名称避免重名
+     */
+    public static final String TEMP = "temp_xxxxxxxxx_temp" + File.separator;
 
 
     private String apkFileDirectory;
+    private IPrintable iPrintable;
 
     /**
      * android 资源类型 string integer boolean array
@@ -46,13 +52,27 @@ public class ApkResourceHandler {
      */
     public String[] typeFiles = new String[]{"strings.xml", "integers.xml", "bools.xml", "arrays.xml", "arrays.xml", "arrays.xml"};
 
-    public ApkResourceHandler(String apkFileDirectory) {
+    public ApkResourceHandler(String apkFileDirectory, IPrintable iPrintable) {
 
 
         this.apkFileDirectory = apkFileDirectory;
 
+        this.iPrintable = iPrintable;
+
+
+        //新建立 移除任何的备份文件。
+        File tempFilePath = new File(getTempFilePath());
+        if (tempFilePath.exists()) {
+            FileUtil.deleteFile(tempFilePath);
+        }
+
+
     }
 
+
+    private String getTempFilePath() {
+        return apkFileDirectory + File.separator + TEMP;
+    }
 
     public void replace(File file) throws CmdExecuteException {
 
@@ -63,8 +83,6 @@ public class ApkResourceHandler {
 
 
         //改文件下 所有文件遍历过去。  替换解析出来的包Res 里面 里面相同的文件
-
-
         replaceResources(file, file);
 
 
@@ -73,7 +91,7 @@ public class ApkResourceHandler {
     /**
      * 所有配置中的文件都替换过去。
      * <p/>
-     * res/values 底下的文件  只需要处理String 类型
+     * res/values 底下的文件
      *
      * @param topFile
      * @param file
@@ -92,11 +110,9 @@ public class ApkResourceHandler {
                 //manifest文件处理
 
 
-                updateManifest(file,destFile);
+                updateManifest(file, destFile);
 
             } else {
-
-
 
 
                 if (!destFile.exists()) {
@@ -110,15 +126,13 @@ public class ApkResourceHandler {
                         for (int i = 0; i < typeSize; i++) {
 
 
-
-                            if(file.getName().equals(typeFiles[i]))
-                            {
-                                throw new CmdExecuteException("打包文档中的文件，不应该存在"+typeFiles[i]+"这样的文件");
+                            if (file.getName().equals(typeFiles[i])) {
+                                throw new CmdExecuteException("打包文档中的文件，不应该存在" + typeFiles[i] + "这样的文件");
                             }
                             //找到对应文件接下 对应类型的资源文件  values[-*]*
 
                             List<String> nodeNames = readNodeNamesInNewFile(types[i], file.getAbsolutePath());
-                            String stringsFilePath = destFile.getParent()+File.separator + typeFiles[i];
+                            String stringsFilePath = destFile.getParent() + File.separator + typeFiles[i];
                             removeXmlNode(nodeNames, stringsFilePath);
 
 
@@ -129,6 +143,8 @@ public class ApkResourceHandler {
 
                 }
 
+
+                backFile(destPath);
                 //文件替换
                 FileUtil.copyFile(file.getPath(), destPath);
             }
@@ -203,8 +219,12 @@ public class ApkResourceHandler {
      */
     private void removeXmlNode(List<String> nodeName, String xmlFilePath) {
 
+
         if (nodeName == null || nodeName.size() == 0) return;
         if (!new File(xmlFilePath).exists()) return;
+
+
+        backFile(xmlFilePath);
 
         DomXml domXml = new DomXml(xmlFilePath);
         Document doc = domXml.openFile();
@@ -258,8 +278,12 @@ public class ApkResourceHandler {
      */
     public void changePackageName(String newPackageName) {
 
-
+        iPrintable.println("==================修改包名================" + newPackageName);
         String manifestFilePath = apkFileDirectory + File.separator + ANDROID_MANIFEST_XML;
+        backFile(manifestFilePath);
+
+
+        String oldPackageName = "";
         DomXml domXml = new DomXml(manifestFilePath);
 
 
@@ -270,6 +294,7 @@ public class ApkResourceHandler {
             if (manifest != null && manifest.hasAttributes()) {
                 NamedNodeMap attr = manifest.getAttributes();
                 Node nodeAttr = attr.getNamedItem(ATTR_PACKAGE);
+                oldPackageName = nodeAttr.getTextContent();
                 nodeAttr.setTextContent(newPackageName);
             }
 
@@ -280,13 +305,87 @@ public class ApkResourceHandler {
         domXml.close();
 
 
+        //替换manifest 文件中 所有与包名
+
+        //在manifest 替换所有 以旧包名开头的配置， 比如actition等。
+        if (!StringUtil.isEmpty(oldPackageName)) {
+            //修改后的文件，临时存放
+            String tempFilePath = manifestFilePath + "-temp";
+            //是否在文件中 有改动到跟packageName相关的配置
+            boolean doUpdatePackage = false;
+            try {
+
+                FileInputStream fileInputStream = new FileInputStream(manifestFilePath);
+                InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream);
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+
+
+                FileOutputStream out = new FileOutputStream(tempFilePath);
+                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(out);
+                BufferedWriter bufferedWriter = new BufferedWriter(outputStreamWriter);
+
+                String text = "";
+
+                String textAfterReplace;
+                while ((text = bufferedReader.readLine()) != null) {
+
+
+                    textAfterReplace = text.replace(oldPackageName, newPackageName);
+                    if (text.contains(oldPackageName)) {
+                        doUpdatePackage = true;
+                        iPrintable.println(textAfterReplace);
+                    }
+
+
+                    bufferedWriter.write(textAfterReplace);
+                    bufferedWriter.write("\n");
+
+
+                }
+
+
+                bufferedWriter.flush();
+
+                bufferedWriter.close();
+                outputStreamWriter.close();
+                out.close();
+
+                bufferedReader.close();
+                inputStreamReader.close();
+                fileInputStream.close();
+
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+            File newFile = new File(tempFilePath);
+
+            //有修改 删除源文件， 临时文件覆盖源文件。
+            if (doUpdatePackage) {
+                File dest = new File(manifestFilePath);
+                dest.delete();
+                newFile.renameTo(dest);
+            } else {
+
+                //无，删除临时文件。
+                newFile.delete();
+            }
+
+        }
+
+
     }
 
 
     public void changeVersionCodeAndName(String newVersionCode, String newVersionName) {
 
-
+        iPrintable.println("==================修改版本号================versionCode:" + newVersionCode + ",versionName:" + newVersionName);
         String manifestFilePath = apkFileDirectory + File.separator + ANDROID_MANIFEST_XML;
+        backFile(manifestFilePath);
         DomXml domXml = new DomXml(manifestFilePath);
 
 
@@ -329,14 +428,43 @@ public class ApkResourceHandler {
 
 
     /**
+     * 解包后 源文件备份， 任务完成后可以恢复原样。
+     *
+     * @param filePath
+     */
+    private void backFile(String filePath) {
+
+        if (filePath.startsWith(apkFileDirectory)) {
+            File tempFilePath = new File(getTempFilePath() + filePath.substring(apkFileDirectory.length()));
+
+
+            //不存在才备份， 存在表示已经备份过了
+            if (!tempFilePath.exists()) {
+                FileUtil.copyFile(filePath, tempFilePath.getAbsolutePath());
+
+
+            }
+
+            markUpdate(filePath);
+        }
+
+    }
+
+
+    private void markUpdate(String filePath) {
+        allFilePathUpdated.add(filePath);
+    }
+
+    /**
      * 对manifest文件进行替换处理。
      * <p/>
      * <p/>
      * 替换原则  application 下   新的节点 如果在解包后的manifest中存在， 替换， 否则 增加
+     *
      * @param configFile
      * @param destFile
      */
-    public void updateManifest(File configFile, File destFile) {
+    private void updateManifest(File configFile, File destFile) {
 
 
         DomXml configDom = new DomXml(configFile.getAbsolutePath());
@@ -347,62 +475,54 @@ public class ApkResourceHandler {
         //循环遍历application下的所有note
 
         final Document configDocument = configDom.openFile();
-        Node configApplcation=findApplicationNode(configDocument) ;
+        Node configApplcation = findApplicationNode(configDocument);
         final Document destDocument = destDom.openFile();
-        Node destAplication=findApplicationNode(destDocument);
+        Node destAplication = findApplicationNode(destDocument);
 
 
-        if(configApplcation==null) return ;
+        if (configApplcation == null) return;
 
-        if(destAplication==null) return ;
-
-
+        if (destAplication == null) return;
 
 
-        NodeList nodeList=configApplcation.getChildNodes();
+        NodeList nodeList = configApplcation.getChildNodes();
 
 
-
-
-        int len=nodeList.getLength();
+        int len = nodeList.getLength();
         for (int i = 0; i < len; i++) {
 
-            Node node=nodeList.item(i);
+            Node node = nodeList.item(i);
 
-            String nodeName=node.getNodeName();
+            String nodeName = node.getNodeName();
 
             NamedNodeMap attr = node.getAttributes();
-            if (attr==null) continue;
+            if (attr == null) continue;
             final Node namedItem = attr.getNamedItem(ATTR_NAME);
-            if(namedItem==null) continue ;
+            if (namedItem == null) continue;
             String androidName = namedItem.getNodeName();
-            String androidNameValue=namedItem.getNodeValue();
-
-
-
+            String androidNameValue = namedItem.getNodeValue();
 
 
             //在目标document 中找到该节点  如果存在移除
 
-            NodeList destAplicationChildNodes=destAplication.getChildNodes();
-            int destLength=destAplicationChildNodes.getLength();
+            NodeList destAplicationChildNodes = destAplication.getChildNodes();
+            int destLength = destAplicationChildNodes.getLength();
             for (int j = 0; j < destLength; j++) {
 
                 Node destNode = destAplicationChildNodes.item(j);
 
-                String destNodeName=destNode.getNodeName();
+                String destNodeName = destNode.getNodeName();
 
-                NamedNodeMap destAttr= destNode.getAttributes();
-                if (destAttr==null) continue;
+                NamedNodeMap destAttr = destNode.getAttributes();
+                if (destAttr == null) continue;
                 final Node destNameAttr = destAttr.getNamedItem(ATTR_NAME);
-                if(destNameAttr==null) continue;
+                if (destNameAttr == null) continue;
                 String destAndroidName = destNameAttr.getNodeName();
 
 
-                String destAndroidNameValue=destNameAttr.getNodeValue();
+                String destAndroidNameValue = destNameAttr.getNodeValue();
 
-                if(nodeName.equals(destNodeName)&&androidName.equals(destAndroidName)&&androidNameValue.equals(destAndroidNameValue))
-                {
+                if (nodeName.equals(destNodeName) && androidName.equals(destAndroidName) && androidNameValue.equals(destAndroidNameValue)) {
 
 
                     destAplication.removeChild(destNode);
@@ -410,17 +530,13 @@ public class ApkResourceHandler {
                 }
 
 
-
             }
-
-
 
 
             //添加到目标document中
 
 
-
-            Node copyName= destDocument.importNode(node,true);
+            Node copyName = destDocument.importNode(node, true);
 
 
             destAplication.appendChild(copyName);
@@ -435,18 +551,12 @@ public class ApkResourceHandler {
         configDom.close();
 
 
-
-
-        
-
-
     }
 
-    private  Node findApplicationNode(Document document)
-    {
+    private Node findApplicationNode(Document document) {
 
 
-      Node firstChild=  document.getFirstChild();
+        Node firstChild = document.getFirstChild();
 
         if (firstChild.hasChildNodes()) {
             NodeList childNodes = firstChild.getChildNodes();
@@ -455,7 +565,7 @@ public class ApkResourceHandler {
             for (int i = 0; i < childNodeCount; i++) {
                 Node node = childNodes.item(i);
 
-                if(node.getNodeName().equals(APPLICATION))
+                if (node.getNodeName().equals(APPLICATION))
                     return node;
 
             }
@@ -465,6 +575,62 @@ public class ApkResourceHandler {
         return null;
 
 
+    }
+
+    /**
+     * 所有发生改变的文件， 包括添加， 修改
+     * <p>
+     * 恢复源文件时候 这些文件全部删除， 并从备份文件夹中 恢复原文件。
+     */
+    private Set<String> allFilePathUpdated = new HashSet<>();
+
+
+    /**
+     * 还原资源文件。
+     */
+    public void resetResources() {
+
+
+        for (String filePath : allFilePathUpdated) {
+
+            File file = new File(filePath);
+            FileUtil.deleteFile(file);
+
+        }
+        allFilePathUpdated.clear();
+
+        File tempFilePath = new File(getTempFilePath());
+
+        moveTempOut(tempFilePath);
+
+
+        FileUtil.deleteFile(tempFilePath);
+
+
+
+        File distFile=new File(apkFileDirectory,"dist");
+        FileUtil.deleteFile(distFile);
+
 
     }
+
+    private void moveTempOut(File tempFile) {
+        if (tempFile.isDirectory()) {
+            File[] children = tempFile.listFiles();
+            for (File child : children) {
+                moveTempOut(child);
+
+            }
+
+        } else {
+
+            File dest = new File(tempFile.getAbsolutePath().replace(TEMP, ""));
+
+            if (dest.exists()) dest.delete();
+            tempFile.renameTo(dest);
+        }
+
+
+    }
+
 }

@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ *
+ *  打包各处理。
+ *
  * Created by davidleen29 on 2017/8/7.
  */
 
@@ -51,7 +54,7 @@ public class ApkHandler {
 
     public ApkHandler(ConfigData configData, IPrintable iPrintable) {
 
-        this(configData, iPrintable, true);
+        this(configData, iPrintable, false);
     }
 
 
@@ -62,8 +65,6 @@ public class ApkHandler {
         jdkHome = configData.jdkHomePath;
         jarSignerPath = configData.jdkHomePath + RELATIVE_PATH_JAR_SIGN;
         this.iPrintable = iPrintable;
-
-
         key_pass = configData.keypass;
         store_pass = configData.storepass;
         alias = configData.alias;
@@ -89,19 +90,24 @@ public class ApkHandler {
 
 
     }
-
-    public void replaceRes(File packConfigFilePath, String apkDecompiledTempFilePath) {
-        ApkResourceHandler apkResourceHandler = new ApkResourceHandler(apkDecompiledTempFilePath);
-        try {
-            apkResourceHandler.replace(packConfigFilePath);
-        } catch (CmdExecuteException e) {
-            e.printStackTrace();
-            printMessage("---------------warning--------------------");
-            printMessage(e.getMessage());
-        }
-
-
-    }
+//
+//    /**
+//     * 资源替换处理
+//     * @param packConfigFilePath
+//     * @param apkDecompiledTempFilePath
+//     */
+//    public void replaceRes(File packConfigFilePath, String apkDecompiledTempFilePath) {
+//        ApkResourceHandler apkResourceHandler = new ApkResourceHandler(apkDecompiledTempFilePath);
+//        try {
+//            apkResourceHandler.replace(packConfigFilePath);
+//        } catch (CmdExecuteException e) {
+//            e.printStackTrace();
+//            printMessage("---------------warning--------------------");
+//            printMessage(e.getMessage());
+//        }
+//
+//
+//    }
 
 
     /**
@@ -300,23 +306,7 @@ public class ApkHandler {
         printMessage("==================批量打包结束================");
     }
 
-    public void changeVersionCodeAndName(String apkDecompiledTempFilePath, String newVersionCode, String newVersionName) {
 
-        printMessage("==================修改版本号================");
-        ApkResourceHandler apkResourceHandler = new ApkResourceHandler(apkDecompiledTempFilePath);
-        apkResourceHandler.changeVersionCodeAndName(newVersionCode, newVersionName);
-
-
-    }
-
-
-    public void changePackageName(String apkDecompiledTempFilePath, String newPackageName) {
-
-        printMessage("==================修改版包名================");
-        ApkResourceHandler apkResourceHandler = new ApkResourceHandler(apkDecompiledTempFilePath);
-        apkResourceHandler.changePackageName(newPackageName);
-
-    }
 
 
 
@@ -347,4 +337,6 @@ public class ApkHandler {
 
 
     }
+
+
 }
