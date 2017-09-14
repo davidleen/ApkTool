@@ -9,9 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
- *  打包各处理。
- *
+ * 打包各处理。
+ * <p>
  * Created by davidleen29 on 2017/8/7.
  */
 
@@ -40,10 +39,11 @@ public class ApkHandler {
 
     private static String DECODE = "apktool d -f %s  -o %s";
     private static String BUNDLE_UP = "apktool b   %s ";
+    private static String APPEND_FILE_TO_APK = "aapt  a   %s   %s";
 
 
     //签名处理。jarsigner -verbose -keystore PATH/TO/YOUR_RELEASE_KEY.keystore -storepass YOUR_STORE_PASS -keypass YOUR_KEY_PASS PATH/TO/YOUR_UNSIGNED_PROJECT.apk YOUR_ALIAS_NAME
-     private static String SIGN = " -sigalg MD5withRSA     -digestalg SHA1  -keystore %s  -storepass %s -keypass %s   %s   %s  -signedjar %s   ";  // -verbose
+    private static String SIGN = " -sigalg MD5withRSA     -digestalg SHA1  -keystore %s  -storepass %s -keypass %s   %s   %s  -signedjar %s   ";  // -verbose
 // private static String SIGN = " -sigalg SHA256withRSA     -digestalg SHA1  -keystore %s  -storepass %s -keypass %s   %s   %s  -signedjar %s   ";  // -verbose
 
     /**
@@ -166,11 +166,9 @@ public class ApkHandler {
         //验证签名
 
 
-
-
-          cmd = String.format(  " -verify    -certs %s",   resultFileName);
-         array = cmd.split(" ");
-         commandList = new ArrayList<>();
+        cmd = String.format(" -verify    -certs %s", resultFileName);
+        array = cmd.split(" ");
+        commandList = new ArrayList<>();
         commandList.add(path);
         for (String temp : array) {
             commandList.add(temp);
@@ -180,10 +178,6 @@ public class ApkHandler {
         printMessage("验证签名", commandList);
 
         Command.execute(commandList, iPrintable);
-
-
-
-
 
 
         return resultFileName;
@@ -204,8 +198,7 @@ public class ApkHandler {
 
         String zipAlignedFilePath = splitFileName(apkFilePath, "_aligned");
 
-        File file
-                = new File(zipAlignedFilePath);
+        File file = new File(zipAlignedFilePath);
         if (file.exists()) file.delete();
 
 
@@ -220,7 +213,27 @@ public class ApkHandler {
         printMessage("对齐", commandList);
 
 
+
         Command.execute(commandList, iPrintable);
+
+
+
+
+
+          cmd = (showCommandDetail ? " -v " : "") + " -c    4  " +  "  " + zipAlignedFilePath;  //
+
+
+        commandList.clear();
+        commandList.add(alignCmdPath);
+        for (String temp : cmd.split(" ")) {
+            commandList.add(temp);
+        }
+        printMessage("对齐验证", commandList);
+
+        Command.execute(commandList, iPrintable);
+
+
+
 
 
         return zipAlignedFilePath;
@@ -265,25 +278,7 @@ public class ApkHandler {
 
     }
 
-    public void move(String srcFilePath, String destFilePath) {
 
-
-        if (!StringUtil.isEmpty(srcFilePath)) {
-            File dest = new File(destFilePath);
-
-            File file = new File(srcFilePath);
-            if (dest.exists()) {
-                dest.delete();
-            } else {
-                FileUtil.makeDir(dest);
-            }
-
-            boolean result = file.renameTo(dest);
-
-            printMessage(dest.getAbsolutePath() + ",result:" + result);
-        }
-
-    }
 
 
     private void printMessage(String message) {
@@ -307,10 +302,8 @@ public class ApkHandler {
     }
 
 
-
-
-
     private static String VIEW_SIGN = "  -list  -v -keystore   %s     -storepass  %s  -alias %s ";
+
     /**
      * 查看签名文件信息
      */
@@ -322,7 +315,7 @@ public class ApkHandler {
 
         String path = jdkHome + RELATIVE_PATH_KEY_TOOL;
 
-        String cmd = String.format(VIEW_SIGN, keystorePath,  store_pass, alias);
+        String cmd = String.format(VIEW_SIGN, keystorePath, store_pass, alias);
         String[] array = cmd.split(" ");
         List<String> commandList = new ArrayList<>();
         commandList.add(path);
@@ -338,5 +331,27 @@ public class ApkHandler {
 
     }
 
+    /**
+     * 将指定目录下文件追加到apk根目录下。
+     *
+     * @param unSignApkFilePath
+     * @param directory
+     */
+    public void appendFileToApk(String unSignApkFilePath, String filePath) throws CmdExecuteException {
+
+        printMessage("==================追加额外文件到未签名apk================");
+
+
+                String cmd = apkToolDirectory + String.format(APPEND_FILE_TO_APK, unSignApkFilePath,filePath);
+
+                iPrintable.println();
+                printMessage("追加额外文件", cmd);
+
+
+                Command.executeCmd(new String[]{cmd}, iPrintable);
+
+
+
+    }
 
 }

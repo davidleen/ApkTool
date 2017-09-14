@@ -1,5 +1,7 @@
 package com.changdu.apkpackage.utlis;
 
+import com.changdu.apkpackage.dom.StringUtil;
+
 import javax.swing.*;
 import java.io.File;
 import java.io.FileInputStream;
@@ -143,6 +145,33 @@ public class FileUtil {
         }
 
         file.delete();
+
+    }
+
+
+    /**
+     * 移动文件   目标文件若是存在，删除
+     * @param srcFilePath
+     * @param destFilePath
+     */
+    public static boolean move(String srcFilePath, String destFilePath) {
+
+
+        if (!StringUtil.isEmpty(srcFilePath)) {
+            File dest = new File(destFilePath);
+
+            File file = new File(srcFilePath);
+            if (dest.exists()) {
+                dest.delete();
+            } else {
+                FileUtil.makeDir(dest);
+            }
+
+            return file.renameTo(dest);
+
+
+        }
+        return false;
 
     }
 }

@@ -551,7 +551,8 @@ public class MainFrame extends JFrame {
                 }
 
                 outputFilePath = apkDestDirectory + apkFile.getName();
-                apkHandler.move(unSignApkFilePath, outputFilePath);
+                boolean result = FileUtil.move(unSignApkFilePath, outputFilePath);
+                printJob.println("文件移动：" + outputFilePath + ",result:" + result);
 
 
             }
@@ -596,7 +597,9 @@ public class MainFrame extends JFrame {
 
             String finalPath = apkFile.getParent() + File.separator + "out" + File.separator + new File(outputFilePath).getName();
             if (!outputFilePath.equals(finalPath)) {
-                apkHandler.move(outputFilePath, finalPath);
+
+                boolean result = FileUtil.move(outputFilePath, finalPath);
+                printJob.println("文件移动：" + finalPath + ",result:" + result);
                 outputFilePath = finalPath;
             }
 
@@ -705,6 +708,20 @@ public class MainFrame extends JFrame {
                         }
 
 
+                        File appendedFile = new File(file, Constant.APPENDIX_FILE_PATH);
+                        if (appendedFile.exists()) {
+                            if (appendedFile.isDirectory()) {
+
+                                for (File append : appendedFile.listFiles()) {
+
+
+                                    apkHandler.appendFileToApk(unSignApkFilePath, append.getPath());
+
+                                }
+
+                            }
+
+                        }
 
 
                         //执行签名
@@ -744,10 +761,10 @@ public class MainFrame extends JFrame {
                         }
 
                         //第六步  复制apk到指定目录下。
+                        String finalFilePath = apkDestDirectory + new File(outPutFile).getName() ;
 
-                        String finalFilePath = apkDestDirectory + file.getName() + ".apk";
-                        apkHandler.move(outPutFile, finalFilePath);
-                        printJob.print();
+                        boolean result = FileUtil.move(outPutFile, finalFilePath);
+                        printJob.println("文件移动：" + finalFilePath + ",result:" + result);
 
 
                     }

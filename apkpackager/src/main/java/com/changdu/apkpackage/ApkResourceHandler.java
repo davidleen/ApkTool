@@ -147,15 +147,20 @@ public class ApkResourceHandler {
                 backFile(destPath);
                 //文件替换
                 FileUtil.copyFile(file.getPath(), destPath);
+                iPrintable.println("文件替换 from :" + file.getPath() + (destFile.exists() ? ("  --->  " + destPath) : ""));
             }
 
 
         } else {
 
+            //额外追加到apk包的文件不需要拷贝到apk temp 目录下。
+            if (file.getName().equals(Constant.APPENDIX_FILE_PATH)) return;
+
 
             File[] childs = file.listFiles();
 
             for (File temp : childs) {
+
                 replaceResources(topFile, temp);
             }
 
@@ -607,8 +612,7 @@ public class ApkResourceHandler {
         FileUtil.deleteFile(tempFilePath);
 
 
-
-        File distFile=new File(apkFileDirectory,"dist");
+        File distFile = new File(apkFileDirectory, "dist");
         FileUtil.deleteFile(distFile);
 
 
@@ -632,5 +636,6 @@ public class ApkResourceHandler {
 
 
     }
+
 
 }
