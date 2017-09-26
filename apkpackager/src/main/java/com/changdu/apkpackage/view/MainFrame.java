@@ -690,16 +690,25 @@ public class MainFrame extends JFrame {
 
                         apkResourceHandler.replace(file);
 
+                        //合成后未签名的包地址。
+                        String unSignApkFilePath = apkDecompiledDirectory + "dist" + File.separator + file.getName();
                         if (options.changeVersion) {
-                            apkResourceHandler.changeVersionCodeAndName(mainPanel.getVersionCode(), mainPanel.getVersionName());
+                            String versionCode = mainPanel.getVersionCode();
+                            String versionName = mainPanel.getVersionName();
+                            unSignApkFilePath= unSignApkFilePath+"_V"+versionName+"_"+versionCode;
+
+                            apkResourceHandler.changeVersionCodeAndName(versionCode, versionName);
 
                         }
 
+                        unSignApkFilePath=unSignApkFilePath+".apk";
+
+
+
 
                         //  编译打包
-                        apkHandler.bundleUp(apkDecompiledDirectory);
+                        apkHandler.bundleUp(apkDecompiledDirectory,unSignApkFilePath);
                         printJob.print();
-                        String unSignApkFilePath = apkDecompiledDirectory + "dist" + File.separator + apkFile.getName();
 
                         if (!new File(unSignApkFilePath).exists()) {
 
@@ -761,7 +770,7 @@ public class MainFrame extends JFrame {
                         }
 
                         //第六步  复制apk到指定目录下。
-                        String finalFilePath = apkDestDirectory + new File(outPutFile).getName() ;
+                        String finalFilePath = apkDestDirectory +new File(outPutFile).getName() ;
 
                         boolean result = FileUtil.move(outPutFile, finalFilePath);
                         printJob.println("文件移动：" + finalFilePath + ",result:" + result);

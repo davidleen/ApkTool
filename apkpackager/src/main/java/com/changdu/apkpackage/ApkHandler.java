@@ -39,6 +39,7 @@ public class ApkHandler {
 
     private static String DECODE = "apktool d -f %s  -o %s";
     private static String BUNDLE_UP = "apktool b   %s ";
+    private static String BUNDLE_UP_WIDTH_DEST = "apktool b   %s  -o  %s";
     private static String APPEND_FILE_TO_APK = "aapt  a   %s   %s";
 
 
@@ -114,7 +115,6 @@ public class ApkHandler {
      * 生成apk包，
      *
      * @param tempFileDirectory 解包后apk相关文件所在的文件夹
-     * @return 生成的apk包路径（未签名）
      * @throws CmdExecuteException
      */
     public void bundleUp(String tempFileDirectory) throws CmdExecuteException {
@@ -123,6 +123,26 @@ public class ApkHandler {
         String cmd = apkToolDirectory + String.format(BUNDLE_UP, tempFileDirectory);
 
         printMessage("打包", cmd);
+
+
+        Command.executeCmd(new String[]{cmd}, iPrintable);
+
+
+    }
+
+    /**
+     * 生成apk包，
+     *
+     * @param tempFileDirectory 解包后apk相关文件所在的文件夹
+     * @param destApkPath   指定合成的apk文件路径
+     * @throws CmdExecuteException
+     */
+    public void bundleUp(String tempFileDirectory,String destApkPath) throws CmdExecuteException {
+
+
+        String cmd = apkToolDirectory + String.format(BUNDLE_UP_WIDTH_DEST, tempFileDirectory,destApkPath);
+
+        printMessage("打包到"+destApkPath, cmd);
 
 
         Command.executeCmd(new String[]{cmd}, iPrintable);
@@ -335,7 +355,7 @@ public class ApkHandler {
      * 将指定目录下文件追加到apk根目录下。
      *
      * @param unSignApkFilePath
-     * @param directory
+
      */
     public void appendFileToApk(String unSignApkFilePath, String filePath) throws CmdExecuteException {
 
