@@ -98,7 +98,21 @@ public class ApkResourceHandler {
      */
     private void replaceResources(File topFile, File file) throws CmdExecuteException {
 
+
+
+
+        String fileName = file.getName();
         if (file.isFile()) {
+
+
+
+            //window db 临时文件不做处理。
+            if(fileName.toLowerCase().equals(Constant.WINDOW_DB_FILE.toLowerCase()))
+            {
+                return;
+            }
+
+
             String relativePath = file.getAbsolutePath().substring(topFile.getAbsolutePath().length());
 
             String destPath = apkFileDirectory + relativePath;
@@ -106,7 +120,7 @@ public class ApkResourceHandler {
 
             File destFile = new File(destPath);
 
-            if (file.getName().equals(ANDROID_MANIFEST_XML)) {
+            if (fileName.equals(ANDROID_MANIFEST_XML)) {
                 //manifest文件处理
 
 
@@ -154,7 +168,9 @@ public class ApkResourceHandler {
         } else {
 
             //额外追加到apk包的文件不需要拷贝到apk temp 目录下。
-            if (file.getName().equals(Constant.APPENDIX_FILE_PATH)) return;
+
+            if (fileName.equals(Constant.APPENDIX_FILE_PATH)) return;
+
 
 
             File[] childs = file.listFiles();
