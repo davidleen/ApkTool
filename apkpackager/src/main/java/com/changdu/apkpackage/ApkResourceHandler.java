@@ -99,16 +99,12 @@ public class ApkResourceHandler {
     private void replaceResources(File topFile, File file) throws CmdExecuteException {
 
 
-
-
         String fileName = file.getName();
         if (file.isFile()) {
 
 
-
             //window db 临时文件不做处理。
-            if(fileName.toLowerCase().equals(Constant.WINDOW_DB_FILE.toLowerCase()))
-            {
+            if (fileName.toLowerCase().equals(Constant.WINDOW_DB_FILE.toLowerCase())) {
                 return;
             }
 
@@ -119,6 +115,19 @@ public class ApkResourceHandler {
 
 
             File destFile = new File(destPath);
+            File destFile2 = null;
+            //目标文件不存在的情况处理。
+            if (!destFile.exists()) {
+                //对jpg文件 进行兼容
+                if (relativePath.toLowerCase().endsWith(".jpg")) {
+                    destFile2 = new File(destFile.getPath().replace(".jpg", ".png"));
+                }
+                //对png文件 进行兼容
+                if (relativePath.toLowerCase().endsWith(".png")) {
+                    destFile2 = new File(destFile.getPath().replace(".png", ".jpg"));
+                }
+            }
+
 
             if (fileName.equals(ANDROID_MANIFEST_XML)) {
                 //manifest文件处理
@@ -129,7 +138,9 @@ public class ApkResourceHandler {
             } else {
 
 
-                if (!destFile.exists()) {
+                if (!destFile.exists() && (destFile2 == null || !destFile2.exists())) {
+
+
                     //目标文件不存在， 并且是 res/values[-*]*/ 下的文件。 需要从对应的
                     //目标替换文件不存在。  合并到 strings.xml类似的文件中了。
 //                    //移除掉strings.xml，integer.xml ...中的相应配置数据。
@@ -158,9 +169,14 @@ public class ApkResourceHandler {
                 }
 
 
-                backFile(destPath);
+                boolean hasFile2 = destFile2 != null && destFile2.exists();
+                backFile(destFile.getPath(), hasFile2 ? destFile2.getPath() : destFile.getPath());
+                if(hasFile2)
+                {
+                    destFile2.delete();
+                }
                 //文件替换
-                FileUtil.copyFile(file.getPath(), destPath);
+                FileUtil.copyFile(file.getPath(), destFile.getPath());
                 iPrintable.println("文件替换 from :" + file.getPath() + (destFile.exists() ? ("  --->  " + destPath) : ""));
             }
 
@@ -170,7 +186,6 @@ public class ApkResourceHandler {
             //额外追加到apk包的文件不需要拷贝到apk temp 目录下。
 
             if (fileName.equals(Constant.APPENDIX_FILE_PATH)) return;
-
 
 
             File[] childs = file.listFiles();
@@ -447,7 +462,6 @@ public class ApkResourceHandler {
 
     }
 
-
     /**
      * 解包后 源文件备份， 任务完成后可以恢复原样。
      *
@@ -455,18 +469,32 @@ public class ApkResourceHandler {
      */
     private void backFile(String filePath) {
 
-        if (filePath.startsWith(apkFileDirectory)) {
-            File tempFilePath = new File(getTempFilePath() + filePath.substring(apkFileDirectory.length()));
+        backFile(filePath, filePath);
+    }
+
+    /**
+     * 解包后 源文件备份， 任务完成后可以恢复原样。
+     * <p>
+     * 在特殊情况  filePath, 替换的文件跟 备份的文件不一样，  .jpg  与.png 情况下
+     *
+     * @param filePathToPlace
+     * @param filePathToBack
+     */
+    private void backFile(String filePathToPlace, String filePathToBack) {
+
+
+        if (filePathToBack.startsWith(apkFileDirectory)) {
+            File tempFilePath = new File(getTempFilePath() + filePathToBack.substring(apkFileDirectory.length()));
 
 
             //不存在才备份， 存在表示已经备份过了
             if (!tempFilePath.exists()) {
-                FileUtil.copyFile(filePath, tempFilePath.getAbsolutePath());
-
+                FileUtil.copyFile(filePathToBack, tempFilePath.getAbsolutePath());
 
             }
 
-            markUpdate(filePath);
+
+            markUpdate(filePathToPlace);
         }
 
     }

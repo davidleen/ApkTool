@@ -11,7 +11,11 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by davidleen29 on 2017/8/7.
@@ -27,8 +31,12 @@ public class MainFrame extends JFrame {
     //打印接口
     private IPrintable printJob;
 
+
+    ExecutorService executor;
+
     public MainFrame(String title) {
         super(title);
+        executor = Executors.newFixedThreadPool(3);
 
 
         mainPanel = new MainPanel(new MainPanel.PanelListener() {
@@ -328,7 +336,8 @@ public class MainFrame extends JFrame {
 
 
         mainPanel.setEdiable(false);
-        new Thread() {
+        executor.execute(new Runnable() {
+
 
             public void run() {
 
@@ -369,7 +378,7 @@ public class MainFrame extends JFrame {
                 mainPanel.setEdiable(true);
 
             }
-        }.start();
+        });
 
 
     }
@@ -381,8 +390,8 @@ public class MainFrame extends JFrame {
 
         if (!checkFirst(null)) return;
 
+        executor.execute(new Runnable() {
 
-        new Thread() {
 
             public void run() {
 
@@ -426,7 +435,7 @@ public class MainFrame extends JFrame {
                 mainPanel.setEdiable(true);
 
             }
-        }.start();
+        });
 
     }
 
@@ -444,7 +453,8 @@ public class MainFrame extends JFrame {
         preWork();
 
 
-        new Thread() {
+        executor.execute(new Runnable() {
+
 
             public void run() {
 
@@ -461,15 +471,15 @@ public class MainFrame extends JFrame {
                 mainPanel.setEdiable(true);
 
             }
-        }.start();
+        });
     }
 
 
     private void doNormalInThread(final MainPanel.Options options) {
 
         mainPanel.setEdiable(false);
-        new Thread(
-        ) {
+        executor.execute(new Runnable() {
+
             @Override
             public void run() {
 
@@ -487,7 +497,7 @@ public class MainFrame extends JFrame {
                 }
                 mainPanel.setEdiable(true);
             }
-        }.start();
+        });
 
     }
 
@@ -509,6 +519,7 @@ public class MainFrame extends JFrame {
             //最终目标路径
             String apkDestDirectory = apkFile.getParent() + File.separator + "out" + File.separator;
             FileUtil.deleteAllFiles(apkDestDirectory);
+
 
             if (options.changeVersion || options.changePackage) {
 
@@ -635,12 +646,43 @@ public class MainFrame extends JFrame {
 
 
     /**
+     * 查找打包文件底下所有的配置文件
+     *
+     * @param file
+     * @return
+     */
+    private java.util.List<File> findAllFileToPack(File file) {
+
+
+        if (!file.isDirectory()) return null;
+        java.util.List list = new ArrayList();
+        if (file.getName().startsWith("com.")) {
+            list.add(file);
+            return list;
+        }
+
+        File[] files = file.listFiles();
+        for (File temp : files) {
+
+            java.util.List<File> result = findAllFileToPack(temp);
+            if (result != null) {
+                list.addAll(result);
+            }
+        }
+
+        return list;
+
+
+    }
+
+    /**
      * 执行批量打包
      */
     private void executePack(final MainPanel.Options options) {
 
         mainPanel.setEdiable(false);
-        new Thread() {
+        executor.execute(new Runnable() {
+
             @Override
             public void run() {
 
@@ -649,7 +691,12 @@ public class MainFrame extends JFrame {
                 printJob.println();
                 ApkHandler apkHandler = new ApkHandler(configData, printJob);
 
-
+//                {
+//                    File[] files = new File(configData.apkPackPath).listFiles();
+//                    for (File file : files) {
+//                        Map<String,String > channel=ChannelHelper.getChannelMap(file,printJob);
+//                    }
+//                }
 //                //第一步 反编译
                 try {
 
@@ -673,13 +720,18 @@ public class MainFrame extends JFrame {
                     }
 
 
-                    File[] files = new File(configData.apkPackPath).listFiles();
+                    List<File> allFileToPack = findAllFileToPack(new File(configData.apkPackPath));
+                    File[] files = new File[allFileToPack.size()];
+                    allFileToPack.toArray(files);
+
 
                     ApkResourceHandler apkResourceHandler = new ApkResourceHandler(apkDecompiledDirectory, printJob);
                     //循环打包
                     for (File file : files) {
 
                         if (!file.isDirectory()) continue;
+
+                        Map<String, String> channel = ChannelHelper.getChannelMap(file, printJob);
 
 
                         apkResourceHandler.resetResources();
@@ -695,19 +747,17 @@ public class MainFrame extends JFrame {
                         if (options.changeVersion) {
                             String versionCode = mainPanel.getVersionCode();
                             String versionName = mainPanel.getVersionName();
-                            unSignApkFilePath= unSignApkFilePath+"_V"+versionName+"_"+versionCode;
+                            unSignApkFilePath = unSignApkFilePath + "_V" + versionName + "_" + versionCode;
 
                             apkResourceHandler.changeVersionCodeAndName(versionCode, versionName);
 
                         }
 
-                        unSignApkFilePath=unSignApkFilePath+".apk";
-
-
+                        unSignApkFilePath = unSignApkFilePath + ".apk";
 
 
                         //  编译打包
-                        apkHandler.bundleUp(apkDecompiledDirectory,unSignApkFilePath);
+                        apkHandler.bundleUp(apkDecompiledDirectory, unSignApkFilePath);
                         printJob.print();
 
                         if (!new File(unSignApkFilePath).exists()) {
@@ -733,47 +783,84 @@ public class MainFrame extends JFrame {
                         }
 
 
-                        //执行签名
-                        String outPutFile = unSignApkFilePath;
-                        if (options.sign) {
+                        //没有渠道  循环打包一次， 否则 循环打包 渠道次数
+                        int loopTime = channel != null && channel.size() > 0 ? channel.size() : 1;
 
-                            if (options.sign) {
-                                //第五步 签名
-                                String signedApkFilePath = apkHandler.signUp(unSignApkFilePath);
-                                outPutFile = signedApkFilePath;
-                                printJob.print();
+                        //抓取出渠道键对值
+                        String[] keys = null;
+                        if (channel != null) {
+                            keys = new String[channel.size()];
+                            channel.keySet().toArray(keys);
+                        }
 
 
-                                if (!new File(signedApkFilePath).exists()) {
+                        //多渠道处理
+                        for (int i = 0; i < loopTime; i++) {
 
-                                    showMessage("apk包签名失败");
-                                    return;
+                            String outPutFile = unSignApkFilePath;
+
+                            if (keys != null && keys.length > 0) {
+
+                                //多渠道 ，每个apk 都需要独立复制一份
+                                String newOutPutFile = ApkHandler.splitFileName(outPutFile, "_" + channel.get(keys[i]));
+                                FileUtil.copyFile(outPutFile, newOutPutFile);
+
+                                //渠道文件生成
+                                String channelFile = ChannelHelper.createChannelFile(apkDecompiledDirectory, keys[i]);
+                                //追加到apk文件中
+                                apkHandler.appendFileToApk(newOutPutFile, channelFile);
+
+
+                                outPutFile = newOutPutFile;
+
+                            }
+
+
+                            {
+                                if (options.sign) {
+                                    //第五步 签名
+                                    String signedApkFilePath = apkHandler.signUp(outPutFile);
+                                    outPutFile = signedApkFilePath;
+                                    printJob.print();
+
+
+                                    if (!new File(signedApkFilePath).exists()) {
+
+                                        showMessage("apk包签名失败");
+                                        return;
+                                    }
+
                                 }
-
                             }
-                        }
 
 
-                        if (options.align) {
+                            {
+                                if (options.align) {
 
-                            //第六步  对齐
-                            String alignedApkFilePath = apkHandler.zipAlign(outPutFile);
+                                    //第六步  对齐
+                                    String alignedApkFilePath = apkHandler.zipAlign(outPutFile);
 
-                            outPutFile = alignedApkFilePath;
-                            printJob.print();
+                                    outPutFile = alignedApkFilePath;
+                                    printJob.print();
 
-                            if (!new File(alignedApkFilePath).exists()) {
+                                    if (!new File(alignedApkFilePath).exists()) {
 
-                                showMessage("apk包对齐失败");
-                                return;
+                                        showMessage("apk包对齐失败");
+                                        return;
+                                    }
+                                }
                             }
+
+                            {
+                                //第六步  复制apk到指定目录下。
+                                String finalFilePath = apkDestDirectory + new File(outPutFile).getName();
+
+                                boolean result = FileUtil.move(outPutFile, finalFilePath);
+                                printJob.println("文件移动：" + finalFilePath + ",result:" + result);
+                            }
+
+
                         }
-
-                        //第六步  复制apk到指定目录下。
-                        String finalFilePath = apkDestDirectory +new File(outPutFile).getName() ;
-
-                        boolean result = FileUtil.move(outPutFile, finalFilePath);
-                        printJob.println("文件移动：" + finalFilePath + ",result:" + result);
 
 
                     }
@@ -802,7 +889,7 @@ public class MainFrame extends JFrame {
 
 
             }
-        }.start();
+        });
     }
 
 
