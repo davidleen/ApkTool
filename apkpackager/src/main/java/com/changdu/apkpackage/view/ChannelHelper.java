@@ -21,6 +21,14 @@ public class ChannelHelper {
         String fileName = file.getName();
         File xlsFile = new File(file.getParent() + File.separator + "渠道id_" + fileName + ".xlsx");
 
+        if(!xlsFile.exists())
+        {
+
+              xlsFile = new File(file.getParentFile().getParent() +File.separator+"渠道值"+ File.separator + "渠道id_" + fileName + ".xlsx");
+
+
+        }
+
         if (xlsFile.exists()) {
 
             printable.println("渠道数据读取");
@@ -35,6 +43,7 @@ public class ChannelHelper {
 
 
                 String key = operator.getString(0, i + startRowIndex, 1);
+                if(key==null||"null".equalsIgnoreCase(key)||"".equalsIgnoreCase(key.trim())) continue;
                 String value = operator.getString(0, i + startRowIndex, 2);
                 map.put(key, value);
 
@@ -47,6 +56,11 @@ public class ChannelHelper {
             operator.close();
 
             return map;
+
+        }else
+        {
+
+            printable.println("没有找到渠道值文件 :"+xlsFile.getPath());
 
         }
 

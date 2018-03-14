@@ -38,10 +38,29 @@ public class POIExcelOperator implements ExcelOperator {
     public String getString(int sheetIndex,int rowIndex, int columnIndex) {
 
         Sheet sheetAt = workbook.getSheetAt(sheetIndex);
-        Cell cell=        sheetAt.getRow(rowIndex).getCell(columnIndex);
+        Row row = sheetAt.getRow(rowIndex);
+        if(row==null) return null ;
+        Cell cell=        row.getCell(columnIndex);
         if(cell!=null)
         {
-            return cell.getStringCellValue();
+
+            try {
+                return cell.getStringCellValue();
+            }catch (Throwable t)
+            {
+                t.printStackTrace();
+
+                try {
+
+
+                return String.valueOf(
+                cell.getNumericCellValue());
+                }catch (Throwable t1)
+                {
+                    t1.printStackTrace();
+                }
+
+            }
         }
 
         return null;

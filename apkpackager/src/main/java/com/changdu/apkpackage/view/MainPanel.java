@@ -244,13 +244,16 @@ public class MainPanel implements TextView {
             File file = new File(configData.apkPackPath);
             if (file.exists()) {
 
-                File[] children = file.listFiles();
 
-                for (File temp : children) {
+               java.util.List< File> files=MainFrame.findAllFileToPack(file);
+                for (File temp : files) {
                     text.append(temp.getName() + "        ");
                 }
 
             }
+
+
+
 
             ta_packages.setText(text.toString());
 

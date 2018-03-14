@@ -651,7 +651,7 @@ public class MainFrame extends JFrame {
      * @param file
      * @return
      */
-    private java.util.List<File> findAllFileToPack(File file) {
+    public static  java.util.List<File> findAllFileToPack(File file) {
 
 
         if (!file.isDirectory()) return null;
@@ -742,8 +742,14 @@ public class MainFrame extends JFrame {
 
                         apkResourceHandler.replace(file);
 
+
+                        File parentFile = file.getParentFile();
+                        String appName = parentFile.getName();
+                        apkResourceHandler.changeApkName(appName, printJob);
+
+
                         //合成后未签名的包地址。
-                        String unSignApkFilePath = apkDecompiledDirectory + "dist" + File.separator + file.getName();
+                        String unSignApkFilePath = apkDecompiledDirectory + "dist" + File.separator +appName+"_"+ file.getName();
                         if (options.changeVersion) {
                             String versionCode = mainPanel.getVersionCode();
                             String versionName = mainPanel.getVersionName();
@@ -754,6 +760,8 @@ public class MainFrame extends JFrame {
                         }
 
                         unSignApkFilePath = unSignApkFilePath + ".apk";
+
+
 
 
                         //  编译打包

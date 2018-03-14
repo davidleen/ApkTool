@@ -21,10 +21,12 @@ public class ApkResourceHandler {
 
 
     private static final String ANDROID_MANIFEST_XML = "AndroidManifest.xml";
+    private static final String STRING_XML = "strings.xml";
     private static final String ATTR_PACKAGE = "package";
     private static final String ATTR_VERSION_CODE = "android:versionCode";
     private static final String ATTR_VERSION_NAME = "android:versionName";
-    private static final String ATTR_NAME = "android:name";
+    private static final String ATTR_ANDOIRD_NAME = "android:name";
+    private static final String ATTR_NAME = "name";
 
     private static final String RES = "res";
     /**
@@ -546,7 +548,7 @@ public class ApkResourceHandler {
 
             NamedNodeMap attr = node.getAttributes();
             if (attr == null) continue;
-            final Node namedItem = attr.getNamedItem(ATTR_NAME);
+            final Node namedItem = attr.getNamedItem(ATTR_ANDOIRD_NAME);
             if (namedItem == null) continue;
             String androidName = namedItem.getNodeName();
             String androidNameValue = namedItem.getNodeValue();
@@ -564,7 +566,7 @@ public class ApkResourceHandler {
 
                 NamedNodeMap destAttr = destNode.getAttributes();
                 if (destAttr == null) continue;
-                final Node destNameAttr = destAttr.getNamedItem(ATTR_NAME);
+                final Node destNameAttr = destAttr.getNamedItem(ATTR_ANDOIRD_NAME);
                 if (destNameAttr == null) continue;
                 String destAndroidName = destNameAttr.getNodeName();
 
@@ -681,5 +683,56 @@ public class ApkResourceHandler {
 
     }
 
+    /**
+     * 修改应用名称   这个可以在资源中配置  res/value  也可以 根据文件夹指定
+     * @param appName
+     */
+    public void changeApkName(String appName,IPrintable iPrintable) {
+        String stringvaluexml = apkFileDirectory+File.separator + RES_VALUES_DIRECTORY +File.separator+ STRING_XML;
 
+
+        DomXml domXml = new DomXml(stringvaluexml);
+
+
+        boolean  changeApkName=false;
+        Document doc = domXml.openFile();
+
+        if (doc != null) {
+            Node node = doc.getFirstChild();
+
+            if (node != null) {
+              NodeList nodeList=  node.getChildNodes();
+                for (int i = 0; i < nodeList.getLength(); i++) {
+
+
+                    Node childNode=nodeList.item(i);
+                    if("string".equalsIgnoreCase(childNode.getNodeName())&& childNode.hasAttributes())
+                    {
+                        NamedNodeMap attributes = childNode.getAttributes();
+                        if (attributes == null) continue;
+                        Node nameItem = attributes.getNamedItem(ATTR_NAME);
+                        if(nameItem ==null)continue;
+                        if ("app_name".equalsIgnoreCase(nameItem.getNodeValue())) {
+                            childNode.setTextContent(appName);
+                            changeApkName = true;
+                            break;
+                        }
+
+
+                    }
+                }
+
+
+
+            }
+        }
+        domXml.saveFile(doc);
+
+
+        domXml.close();
+
+        iPrintable.println("应用名称修改:"+changeApkName+ "  ===="+appName);
+
+
+    }
 }

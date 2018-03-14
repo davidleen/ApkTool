@@ -122,6 +122,7 @@ public class ApkHandler {
 
         String cmd = apkToolDirectory + String.format(BUNDLE_UP, tempFileDirectory);
 
+        cmd+=" 2>"+tempFileDirectory+"errlog.txt";
         printMessage("打包", cmd);
 
 
@@ -141,7 +142,7 @@ public class ApkHandler {
 
 
         String cmd = apkToolDirectory + String.format(BUNDLE_UP_WIDTH_DEST, tempFileDirectory,destApkPath);
-
+        cmd+=" 2>"+tempFileDirectory+"errlog.txt";
         printMessage("打包到"+destApkPath, cmd);
 
 
