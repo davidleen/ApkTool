@@ -375,4 +375,12 @@ public class ApkHandler {
 
     }
 
+    public void clearFramework() throws CmdExecuteException {
+        printMessage("==================清除缓存文件================");
+        String cmd = apkToolDirectory +"apktool empty-framework-dir";
+        iPrintable.println();
+        printMessage("清除缓存文件", cmd);
+        Command.executeCmd(new String[]{cmd}, iPrintable);
+
+    }
 }

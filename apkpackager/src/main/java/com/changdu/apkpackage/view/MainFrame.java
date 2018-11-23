@@ -3,6 +3,8 @@ package com.changdu.apkpackage.view;
 import com.changdu.apkpackage.*;
 import com.changdu.apkpackage.dom.StringUtil;
 import com.changdu.apkpackage.entity.ConfigData;
+import com.changdu.apkpackage.entity.StoreFileConfig;
+import com.changdu.apkpackage.entity.StoreFileHistory;
 import com.changdu.apkpackage.utlis.FileUtil;
 import com.changdu.apkpackage.utlis.LocalFileHelper;
 
@@ -11,11 +13,13 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 
 /**
  * Created by davidleen29 on 2017/8/7.
@@ -23,6 +27,7 @@ import java.util.concurrent.Executors;
 
 public class MainFrame extends JFrame {
 
+    public static final String VERSION_PREFIX = "_V";
     MainPanel mainPanel;
 
 
@@ -62,6 +67,21 @@ public class MainFrame extends JFrame {
 
                 if (file != null && file.exists()) {
                     configData.keyStoreFilePath = file.getAbsolutePath();
+                    configData.alias="";
+                    configData.keypass="";
+                    configData.storepass="";
+                    StoreFileHistory history = LocalFileHelper.get(StoreFileHistory.class);
+                    if(history!=null) {
+                        StoreFileConfig config =  history.getItem(configData.keyStoreFilePath);
+                        if(config!=null)
+                        {
+                            configData.alias=config.alias;
+                            configData.keypass=config.keypass;
+                            configData.storepass=config.storepass;
+                        }
+                    }
+
+
                     bindData();
                 }
 
@@ -133,6 +153,19 @@ public class MainFrame extends JFrame {
 
             }
 
+            @Override
+            public void onPickChannelFile() {
+
+                File preSelectFile = getPreSelectedFile(configData.channelFilePath);
+                File file = FileUtil.getSelectedFilePath(preSelectFile);
+                if (file != null && file.exists()) {
+                    configData.channelFilePath = file.getAbsolutePath()  ;
+                    bindData();
+
+                }
+
+
+            }
         });
 
 
@@ -235,6 +268,21 @@ public class MainFrame extends JFrame {
 
             }
         });
+
+        menuItem = new JMenuItem("清除框架缓存");
+
+        menu.add(menuItem);
+
+        menuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+
+              clearFramework();
+
+
+            }
+        });
         setJMenuBar(menuBar);
     }
 
@@ -243,10 +291,14 @@ public class MainFrame extends JFrame {
 
 
         if (configData == null) configData = new ConfigData();
-
         configData.storepass = mainPanel.getStorePass();
         configData.keypass = mainPanel.getKeyPass();
         configData.alias = mainPanel.getAlias();
+
+
+        if(!StringUtil.isEmpty(configData.keyStoreFilePath))
+             saveKeyStoreFileHistory();
+
         saveToLocal();
 
     }
@@ -384,7 +436,7 @@ public class MainFrame extends JFrame {
     }
 
     /**
-     * 解压apk包
+     * 合成apk包
      */
     private void bundleUpApk() {
 
@@ -440,6 +492,31 @@ public class MainFrame extends JFrame {
     }
 
 
+    private void  clearFramework()
+    {
+
+        executor.execute(new Runnable() {
+
+
+            public void run() {
+
+                ApkHandler  apkHandler = new ApkHandler(configData, printJob);
+
+                printJob.println();
+
+                try {
+                    apkHandler.clearFramework();
+                } catch (CmdExecuteException e) {
+                    e.printStackTrace();
+                }
+
+                mainPanel.setEdiable(true);
+
+            }
+        });
+
+    }
+
     /**
      * 查看签名信息
      */
@@ -458,7 +535,7 @@ public class MainFrame extends JFrame {
 
             public void run() {
 
-                ApkHandler apkHandler = new ApkHandler(configData, printJob);
+                ApkHandler  apkHandler = new ApkHandler(configData, printJob);
 
                 printJob.println();
 
@@ -564,6 +641,15 @@ public class MainFrame extends JFrame {
                 outputFilePath = apkDestDirectory + apkFile.getName();
                 boolean result = FileUtil.move(unSignApkFilePath, outputFilePath);
                 printJob.println("文件移动：" + outputFilePath + ",result:" + result);
+
+
+            }
+
+
+            if(options.pickChannelFile)
+            {
+
+                apkHandler.appendFileToApk(outputFilePath,  configData.channelFilePath);
 
 
             }
@@ -724,12 +810,40 @@ public class MainFrame extends JFrame {
                     File[] files = new File[allFileToPack.size()];
                     allFileToPack.toArray(files);
 
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd-HH-mm", Locale.getDefault());
+                    String dateTime= formatter.format(Calendar.getInstance().getTime());
 
                     ApkResourceHandler apkResourceHandler = new ApkResourceHandler(apkDecompiledDirectory, printJob);
+
+
+
+                    String apkFileName = apkFile.getName();
+                    //找出名字
+                    int index=apkFileName.indexOf("-");
+                   String  apkName=index==-1?apkFileName:apkFileName.substring(0,index);
+
+//                    //找出默认文件名上版本号。
+//
+                    String versionPathFromFileName="";
+
+                  int indexVS=  apkFileName.toLowerCase().indexOf(VERSION_PREFIX.toLowerCase());
+                  if(indexVS>-1) {
+                      String versionString=apkFileName.substring(indexVS+ VERSION_PREFIX.length());
+                      int indexVEnd =versionString .indexOf("_");
+                      if(indexVEnd>-1)
+                      {
+                          versionPathFromFileName= VERSION_PREFIX +versionString.substring(0,indexVEnd);
+                      }
+                  }
+
+
+
                     //循环打包
                     for (File file : files) {
 
                         if (!file.isDirectory()) continue;
+
+
 
                         Map<String, String> channel = ChannelHelper.getChannelMap(file, printJob);
 
@@ -748,18 +862,24 @@ public class MainFrame extends JFrame {
                         apkResourceHandler.changeApkName(appName, printJob);
 
 
+
                         //合成后未签名的包地址。
-                        String unSignApkFilePath = apkDecompiledDirectory + "dist" + File.separator +appName+"_"+ file.getName();
+                        String versionPath="";
+                        String unSignApkFilePath = apkDecompiledDirectory + "dist" + File.separator +appName+"-"+ file.getName();
                         if (options.changeVersion) {
                             String versionCode = mainPanel.getVersionCode();
                             String versionName = mainPanel.getVersionName();
-                            unSignApkFilePath = unSignApkFilePath + "_V" + versionName + "_" + versionCode;
+                            versionPath= VERSION_PREFIX + versionName;
+                            unSignApkFilePath = unSignApkFilePath +versionPath ;
 
                             apkResourceHandler.changeVersionCodeAndName(versionCode, versionName);
 
+                        }else
+                        {
+                            versionPath=versionPathFromFileName;
                         }
 
-                        unSignApkFilePath = unSignApkFilePath + ".apk";
+                        unSignApkFilePath = unSignApkFilePath+"-"+dateTime + ".apk";
 
 
 
@@ -807,14 +927,17 @@ public class MainFrame extends JFrame {
 
                             String outPutFile = unSignApkFilePath;
 
+                            String chanelName="";
+
                             if (keys != null && keys.length > 0) {
 
                                 //多渠道 ，每个apk 都需要独立复制一份
-                                String newOutPutFile = ApkHandler.splitFileName(outPutFile, "_" + channel.get(keys[i]));
+                                String newOutPutFile = ApkHandler.splitFileName(outPutFile, "_" + keys[i]);
+                                chanelName="_" + keys[i];
                                 FileUtil.copyFile(outPutFile, newOutPutFile);
 
                                 //渠道文件生成
-                                String channelFile = ChannelHelper.createChannelFile(apkDecompiledDirectory, keys[i]);
+                                String channelFile = ChannelHelper.createChannelFile(apkDecompiledDirectory, channel.get(keys[i]));
                                 //追加到apk文件中
                                 apkHandler.appendFileToApk(newOutPutFile, channelFile);
 
@@ -822,6 +945,7 @@ public class MainFrame extends JFrame {
                                 outPutFile = newOutPutFile;
 
                             }
+
 
 
                             {
@@ -861,7 +985,7 @@ public class MainFrame extends JFrame {
 
                             {
                                 //第六步  复制apk到指定目录下。
-                                String finalFilePath = apkDestDirectory + new File(outPutFile).getName();
+                                String finalFilePath = apkDestDirectory +  apkName+versionPath+"-"+dateTime+chanelName+".apk";
 
                                 boolean result = FileUtil.move(outPutFile, finalFilePath);
                                 printJob.println("文件移动：" + finalFilePath + ",result:" + result);
@@ -910,8 +1034,6 @@ public class MainFrame extends JFrame {
     public void bindData() {
 
         saveToLocal();
-
-
         mainPanel.setConfigData(configData);
 
     }
@@ -921,6 +1043,23 @@ public class MainFrame extends JFrame {
      */
     private void saveToLocal() {
         LocalFileHelper.set(configData);
+
+
+
+    }
+
+    private void saveKeyStoreFileHistory()
+    {
+        if(configData==null) return;
+        StoreFileHistory history=  LocalFileHelper.get(StoreFileHistory.class );
+        if(history==null) history=new StoreFileHistory();
+        StoreFileConfig storeFileConfig=new StoreFileConfig();
+        storeFileConfig.keyStoreFilePath=configData.keyStoreFilePath;
+        storeFileConfig.storepass=configData.storepass;
+        storeFileConfig.keypass=configData.keypass;
+        storeFileConfig.alias=configData.alias;
+        history.addItem(storeFileConfig);
+        LocalFileHelper.set(history);
     }
 
 
