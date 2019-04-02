@@ -74,6 +74,9 @@ public class LocalFileHelper {
             io.printStackTrace();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
+        }catch (Throwable t)
+        {
+            t.printStackTrace();
         }
 
 

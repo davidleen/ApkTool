@@ -4,6 +4,9 @@ import java.io.Serializable;
 
 public class ConfigData implements Serializable {
 
+
+    private static final long serialVersionUID = 7825224039759649113l;
+
     public String apkFilePath;
 
 
@@ -24,6 +27,11 @@ public class ConfigData implements Serializable {
 
     //打包文件配置的路径
     public String apkPackPath;
+
+    /**
+     * 渠道文件路径
+     */
+    public String channelFilePath;
 
 
 }

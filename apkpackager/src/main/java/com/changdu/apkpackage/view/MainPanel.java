@@ -46,6 +46,10 @@ public class MainPanel implements TextView {
     private JCheckBox cb_packageName;
     private JPanel panel_package;
     private JTextField packageName;
+    private JCheckBox cb_channel;
+    private JTextField tx_channel;
+    private JButton pick_chacenl;
+    private JPanel panel_channel;
 
 
     PanelListener panelListener;
@@ -70,8 +74,23 @@ public class MainPanel implements TextView {
 
             }
         });
+
+
+
         cb_sign.setSelected(true);
         panel_key_store.setVisible(true);
+
+        cb_channel.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                panel_channel.setVisible(cb_channel.isSelected());
+            }
+        });
+        cb_channel.setSelected(false);
+        panel_channel.setVisible(false);
+
+
+
 
         cb_version.addItemListener(new ItemListener() {
             @Override
@@ -124,7 +143,8 @@ public class MainPanel implements TextView {
                     cb_packageName.setSelected(false);
                     panel_package.setVisible(false);
                 }
-
+                cb_channel.setVisible(false);
+                panel_channel.setVisible(false);
 
             }
         });
@@ -133,6 +153,9 @@ public class MainPanel implements TextView {
             public void itemStateChanged(ItemEvent e) {
 
                 panel_pack.setVisible(!rd_normal.isSelected());
+
+                cb_channel.setVisible(true);
+                panel_channel.setVisible(cb_channel.isSelected());
 
             }
         });
@@ -181,6 +204,8 @@ public class MainPanel implements TextView {
                 options.changeVersion = cb_version.isSelected();
                 options.sign = cb_sign.isSelected();
                 options.changePackage = cb_packageName.isSelected();
+                options.pickChannelFile = cb_channel.isSelected();
+
                 if (type == 0) return;
 
 
@@ -191,6 +216,13 @@ public class MainPanel implements TextView {
             @Override
             public void actionPerformed(ActionEvent e) {
                 panelListener.onApkPick();
+            }
+        });
+
+        pick_chacenl.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panelListener.onPickChannelFile();
             }
         });
         pickPack.addActionListener(new ActionListener() {
@@ -235,6 +267,7 @@ public class MainPanel implements TextView {
         tf_alias.setText(configData.alias);
         tf_keypass.setText(configData.keypass);
         tf_store_pass.setText(configData.storepass);
+        tx_channel.setText(configData.channelFilePath);
 
 
         if (!StringUtil.isEmpty(configData.apkPackPath)) {
@@ -285,6 +318,8 @@ public class MainPanel implements TextView {
         pickPack.setEnabled(b);
         pickStore.setEnabled(b);
         tf_output.setEditable(b);
+        pick_chacenl.setEnabled(b);
+        tx_channel.setEnabled(b);
     }
 
     public String getVersionCode() {
@@ -329,6 +364,7 @@ public class MainPanel implements TextView {
         void onPickPack();
 
         void onPickApkTool();
+        void onPickChannelFile();
     }
 
 
@@ -338,7 +374,7 @@ public class MainPanel implements TextView {
         boolean align;
         boolean changeVersion;
         boolean changePackage;
-
+        boolean pickChannelFile;
     }
 
     public void showMessage(String message) {

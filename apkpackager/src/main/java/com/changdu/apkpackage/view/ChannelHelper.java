@@ -39,22 +39,31 @@ public class ChannelHelper {
             int rowCount = operator.getRowCount(0);
             Map<String, String> map = new HashMap<>();
             int startRowIndex = 1;
+            int keyColumn=2;
+            int valueColumn=1;
             for (int i = 0; i < rowCount; i++) {
 
 
-                String key = operator.getString(0, i + startRowIndex, 1);
-                if(key==null||"null".equalsIgnoreCase(key)||"".equalsIgnoreCase(key.trim())) continue;
-                String value = operator.getString(0, i + startRowIndex, 2);
+                String key = operator.getString(0, i + startRowIndex, keyColumn);
+                if(key==null||"null".equalsIgnoreCase(key)||"".equalsIgnoreCase(key.trim()))
+                {
+
+                    printable.println("渠道对应值读取失败,对应单元格:i="+i+",j="+keyColumn);
+                    continue;
+                }
+                String value = operator.getString(0, i + startRowIndex, valueColumn);
+                if(map.containsKey(key))
+                {
+                    printable.println("渠道对应值重复:key="+key+",value="+value);
+                }
                 map.put(key, value);
-
-
                 printable.println("渠道对应值====key:" + key + ",value:" + value);
 
             }
 
 
             operator.close();
-
+            printable.println("总共渠道数量:"+map.size());
             return map;
 
         }else

@@ -2,7 +2,7 @@
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.changdu.apkpackage.view.MainPanel">
   <grid id="27dc6" binding="root" layout-manager="BorderLayout" hgap="0" vgap="0">
     <constraints>
-      <xy x="20" y="20" width="513" height="742"/>
+      <xy x="20" y="20" width="513" height="753"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -35,6 +35,8 @@
             <rowspec value="center:max(d;40px):noGrow"/>
             <rowspec value="top:4dlu:noGrow"/>
             <rowspec value="center:10px:noGrow"/>
+            <rowspec value="top:4dlu:noGrow"/>
+            <rowspec value="center:max(d;4px):noGrow"/>
             <rowspec value="top:4dlu:noGrow"/>
             <rowspec value="center:max(d;4px):noGrow"/>
             <rowspec value="top:4dlu:noGrow"/>
@@ -118,7 +120,7 @@
               </grid>
               <grid id="7f086" layout-manager="BorderLayout" hgap="0" vgap="0">
                 <constraints>
-                  <grid row="20" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <grid row="22" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                   <forms/>
                 </constraints>
                 <properties/>
@@ -150,7 +152,7 @@
               </grid>
               <grid id="6d6d7" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
                 <constraints>
-                  <grid row="26" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <grid row="28" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                   <forms/>
                 </constraints>
                 <properties/>
@@ -185,6 +187,12 @@
                       <text value="修改版本号"/>
                     </properties>
                   </component>
+                  <component id="3dc78" class="javax.swing.JCheckBox" binding="cb_channel">
+                    <constraints/>
+                    <properties>
+                      <text value="指定渠道文件"/>
+                    </properties>
+                  </component>
                   <component id="47bb0" class="javax.swing.JCheckBox" binding="cb_sign">
                     <constraints/>
                     <properties>
@@ -203,7 +211,7 @@
               </grid>
               <vspacer id="d87c2">
                 <constraints>
-                  <grid row="28" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                  <grid row="30" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                   <forms defaultalign-vert="false"/>
                 </constraints>
               </vspacer>
@@ -349,7 +357,7 @@
               </vspacer>
               <vspacer id="4b1ea">
                 <constraints>
-                  <grid row="22" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                  <grid row="24" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                   <forms defaultalign-vert="false"/>
                 </constraints>
               </vspacer>
@@ -359,7 +367,7 @@
                 <rowspec value="center:max(d;60px):noGrow"/>
                 <colspec value="fill:d:grow"/>
                 <constraints>
-                  <grid row="24" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <grid row="26" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                   <forms/>
                 </constraints>
                 <properties/>
@@ -521,6 +529,39 @@
                     <constraints/>
                     <properties>
                       <columns value="8"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="4837a" binding="panel_channel" layout-manager="BorderLayout" hgap="0" vgap="0">
+                <constraints>
+                  <grid row="20" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <forms/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="c8758" class="javax.swing.JTextField" binding="tx_channel">
+                    <constraints border-constraint="Center"/>
+                    <properties>
+                      <columns value="30"/>
+                      <toolTipText value="这个文件一般是mmiap.xml"/>
+                    </properties>
+                  </component>
+                  <component id="a86db" class="javax.swing.JButton" binding="pick_chacenl">
+                    <constraints border-constraint="East"/>
+                    <properties>
+                      <text value="选择"/>
+                    </properties>
+                  </component>
+                  <component id="697b2" class="javax.swing.JTextField" default-binding="true">
+                    <constraints border-constraint="West"/>
+                    <properties>
+                      <columns value="7"/>
+                      <editable value="false"/>
+                      <enabled value="true"/>
+                      <horizontalAlignment value="4"/>
+                      <text value="渠道文件"/>
                     </properties>
                   </component>
                 </children>
