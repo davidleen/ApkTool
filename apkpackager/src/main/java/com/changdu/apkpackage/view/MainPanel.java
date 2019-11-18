@@ -50,6 +50,8 @@ public class MainPanel implements TextView {
     private JTextField tx_channel;
     private JButton pick_chacenl;
     private JPanel panel_channel;
+    private JCheckBox jb_change_app_name;
+    private JCheckBox jb_change_package_name;
 
 
     PanelListener panelListener;
@@ -90,7 +92,22 @@ public class MainPanel implements TextView {
         panel_channel.setVisible(false);
 
 
+        jb_change_app_name.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
 
+
+                panelListener.onNewAppNameUse(  jb_change_app_name.isSelected());
+            }
+        });
+
+        jb_change_package_name.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+
+                panelListener.onNewPackageNameUse(jb_change_package_name.isSelected());
+            }
+        });
 
         cb_version.addItemListener(new ItemListener() {
             @Override
@@ -269,6 +286,8 @@ public class MainPanel implements TextView {
         tf_store_pass.setText(configData.storepass);
         tx_channel.setText(configData.channelFilePath);
 
+        jb_change_package_name.setSelected(configData.useNewPackageName);
+        jb_change_app_name.setSelected(configData.useNewAppName);
 
         if (!StringUtil.isEmpty(configData.apkPackPath)) {
 
@@ -365,6 +384,9 @@ public class MainPanel implements TextView {
 
         void onPickApkTool();
         void onPickChannelFile();
+
+        void onNewAppNameUse(boolean use);
+        void onNewPackageNameUse(boolean use);
     }
 
 

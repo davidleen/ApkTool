@@ -42,6 +42,7 @@ public class ApkResourceHandler {
     public static final String TEMP = "temp_xxxxxxxxx_temp" + File.separator;
 
 
+
     private String apkFileDirectory;
     private IPrintable iPrintable;
 
@@ -76,12 +77,16 @@ public class ApkResourceHandler {
         return apkFileDirectory + File.separator + TEMP;
     }
 
-    public void replace(File file) throws CmdExecuteException {
+    public void replace(File file,boolean shouldChangePackageName) throws CmdExecuteException {
 
         //文件名当做包名
 
         String packageName = file.getName();
-        changePackageName(packageName);
+
+
+        if(shouldChangePackageName) {
+            changePackageName(packageName);
+        }
 
 
         //改文件下 所有文件遍历过去。  替换解析出来的包Res 里面 里面相同的文件

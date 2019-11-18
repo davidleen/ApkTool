@@ -34,4 +34,16 @@ public class ConfigData implements Serializable {
     public String channelFilePath;
 
 
+
+    /**
+     * 是否使用配置文档得文件名作为新应用名称。
+     */
+    public boolean useNewAppName;
+
+    /**
+     * 配置文档中是否使用文件路径作为新包名
+     */
+    public boolean useNewPackageName;
+
+
 }

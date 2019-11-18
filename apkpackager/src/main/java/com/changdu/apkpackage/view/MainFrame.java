@@ -119,6 +119,16 @@ public class MainFrame extends JFrame {
                 File file = FileUtil.getSelectedFilePath(preSelectFile);
 
                 if (file != null && file.exists()) {
+
+                    if(file.getPath().contains(" "))
+                    {
+                        mainPanel.showMessage("apk 文件路径:"+file.getPath()+",有空格， 请修改。");
+
+
+                        return;
+                    }
+
+
                     configData.apkFilePath = file.getAbsolutePath();
                     bindData();
                 }
@@ -153,6 +163,25 @@ public class MainFrame extends JFrame {
 
             }
 
+
+            @Override
+            public void onNewAppNameUse(boolean use) {
+
+                if(configData!=null) {
+                    configData.useNewAppName = use;
+                    saveToLocal();
+                }
+
+            }
+
+            @Override
+            public void onNewPackageNameUse(boolean use) {
+                if(configData!=null) {
+                    configData.useNewPackageName = use;
+                    saveToLocal();
+                }
+            }
+
             @Override
             public void onPickChannelFile() {
 
@@ -167,6 +196,9 @@ public class MainFrame extends JFrame {
 
             }
         });
+
+
+
 
 
         setContentPane(mainPanel.getRoot());
@@ -469,7 +501,15 @@ public class MainFrame extends JFrame {
                 String unSignApkFilePath = apkDecompiledDirectory + "dist" + File.separator + apkFile.getName();
 
                 if (!new File(unSignApkFilePath).exists()) {
-                    showMessage("合成未签名apk失败。。。");
+
+                    int option = JOptionPane.showConfirmDialog(MainFrame.this, "是否打开Log文件:\n" + apkDecompiledDirectory+ApkHandler.ERRLOG_TXT + ", 查看详情?", "合成未签名apk失败", JOptionPane.YES_NO_OPTION);
+                    if (option == JOptionPane.OK_OPTION) {
+                        try {
+                            Desktop.getDesktop().open(new File( apkDecompiledDirectory+ApkHandler.ERRLOG_TXT ) );
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                     return;
                 }
 
@@ -634,8 +674,16 @@ public class MainFrame extends JFrame {
                 String unSignApkFilePath = apkDecompiledDirectory + "dist" + File.separator + apkFile.getName();
 
                 if (!new File(unSignApkFilePath).exists()) {
-                    showMessage("合成未签名apk失败。。。");
+                    int option = JOptionPane.showConfirmDialog(MainFrame.this, "是否打开Log文件:\n" + apkDecompiledDirectory+ApkHandler.ERRLOG_TXT + ", 查看详情?", "合成未签名apk失败", JOptionPane.YES_NO_OPTION);
+                    if (option == JOptionPane.OK_OPTION) {
+                        try {
+                            Desktop.getDesktop().open(new File( apkDecompiledDirectory+ApkHandler.ERRLOG_TXT ) );
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                     return;
+
                 }
 
                 outputFilePath = apkDestDirectory + apkFile.getName();
@@ -761,6 +809,12 @@ public class MainFrame extends JFrame {
 
     }
 
+
+
+
+
+
+
     /**
      * 执行批量打包
      */
@@ -854,12 +908,14 @@ public class MainFrame extends JFrame {
                         printJob.println("资源替换");
 
 
-                        apkResourceHandler.replace(file);
+                        apkResourceHandler.replace(file,configData.useNewPackageName);
 
 
                         File parentFile = file.getParentFile();
                         String appName = parentFile.getName();
-                        apkResourceHandler.changeApkName(appName, printJob);
+                        if(configData.useNewAppName) {
+                                apkResourceHandler.changeApkName(appName, printJob);
+                        }
 
 
 

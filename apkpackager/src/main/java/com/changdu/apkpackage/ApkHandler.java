@@ -17,6 +17,7 @@ import java.util.List;
 public class ApkHandler {
 
 
+    public static final String ERRLOG_TXT = "errlog.txt";
     String keystorePath;
     String key_pass;
     String store_pass;
@@ -122,7 +123,7 @@ public class ApkHandler {
 
         String cmd = apkToolDirectory + String.format(BUNDLE_UP, tempFileDirectory);
 
-        cmd+=" 2>"+tempFileDirectory+"errlog.txt";
+        cmd+=" 2>"+tempFileDirectory+ ERRLOG_TXT;
         printMessage("打包", cmd);
 
 
@@ -142,7 +143,7 @@ public class ApkHandler {
 
 
         String cmd = apkToolDirectory + String.format(BUNDLE_UP_WIDTH_DEST, tempFileDirectory,destApkPath);
-        cmd+=" 2>"+tempFileDirectory+"errlog.txt";
+        cmd+=" 2>"+tempFileDirectory+ERRLOG_TXT;
         printMessage("打包到"+destApkPath, cmd);
 
 
