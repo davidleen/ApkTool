@@ -130,12 +130,18 @@ public class FileUtil {
     public static void deleteAllFiles(String filePath) {
         deleteFile(new File(filePath));
     }
+    /**
+     * @param file
+     */
+    public static void deleteFile(String  filePath) {
+        deleteFile(new File(filePath));
 
+    }
     /**
      * @param file
      */
     public static void deleteFile(File file) {
-
+        if(!file.exists()) return;
         if (file.isDirectory()) {
 
             File[] children = file.listFiles();

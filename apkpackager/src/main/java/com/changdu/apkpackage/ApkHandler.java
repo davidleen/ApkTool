@@ -29,6 +29,7 @@ public class ApkHandler {
 
 
     public static final String RELATIVE_PATH_JAR_SIGN = "bin/jarsigner.exe";
+    public static final String RELATIVE_PATH_JAVA_EXE = "bin/java.exe";
     public static final String RELATIVE_PATH_KEY_TOOL = "bin/keytool.exe";
 
 
@@ -38,10 +39,10 @@ public class ApkHandler {
     private IPrintable iPrintable;
 
 
-    private static String DECODE = "apktool d -f %s  -o %s";
+    private static String DECODE = "apktool d -f %s  -o %s  --only-main-classes ";
     private static String BUNDLE_UP = "apktool b   %s ";
     private static String BUNDLE_UP_WIDTH_DEST = "apktool b   %s  -o  %s";
-    private static String APPEND_FILE_TO_APK = "aapt  a   %s   %s";
+    private static String APPEND_FILE_TO_APK = "aapt  a  -v  %s   %s";
 
 
     //签名处理。jarsigner -verbose -keystore PATH/TO/YOUR_RELEASE_KEY.keystore -storepass YOUR_STORE_PASS -keypass YOUR_KEY_PASS PATH/TO/YOUR_UNSIGNED_PROJECT.apk YOUR_ALIAS_NAME
@@ -156,7 +157,7 @@ public class ApkHandler {
     /**
      * 签名处理。
      */
-    public String signUp(String unSignedApkPath) throws CmdExecuteException {
+    public String jarSignUp(String unSignedApkPath) throws CmdExecuteException {
 
 
         String apkPath = unSignedApkPath;
@@ -205,9 +206,65 @@ public class ApkHandler {
         return resultFileName;
     }
 
+    /**
+     * 签名处理。
+     */
+    public String apkSignUp(String unSignedApkPath) throws CmdExecuteException {
+
+
+        String apkPath = unSignedApkPath;
+
+        String resultFileName = splitFileName(apkPath, "_signed_v2+");
+
+
+        File resultFile = new File(resultFileName);
+        if (resultFile.exists()) resultFile.delete();
+
+//        String path = "E:/Program Files/Java/jdk1.7.0_80/bin/jarsigner.exe";
+//        //  String path = "jarsigner.exe";
+        String javaPath=jdkHome+RELATIVE_PATH_JAVA_EXE;
+        String path = apkToolDirectory+"apksigner.jar";
+
+        String text = "%s -jar %s  sign --ks %s  --ks-key-alias %s   --ks-pass pass:%s   --key-pass pass:%s  --in %s --out %s ";
+        String apk_sign_command = String.format( text,javaPath,path, keystorePath,alias, key_pass, store_pass, apkPath,  resultFileName);
+        String[] array = apk_sign_command.split(" ");
+        List<String> commandList = new ArrayList<>();
+        for (String temp : array) {
+            commandList.add(temp);
+        }
+
+
+        printMessage("Apk签名V2+", commandList);
+
+        Command.execute(commandList, iPrintable);
+
+
+        //验证签名
+
+        String apk_sign_verify_command = javaPath+" -jar "+path +"  verify --in "+resultFileName+"  --verbose --print-certs" ;
+
+        array = apk_sign_verify_command.split(" ");
+        commandList = new ArrayList<>();
+        for (String temp : array) {
+            commandList.add(temp);
+        }
+
+
+        printMessage("验证Apk签名", commandList);
+
+        Command.execute(commandList, iPrintable);
+
+
+        return resultFileName;
+    }
 
     /**
      * 签名后的包 对齐
+     *
+     *
+     * 如果您使用的是 apksigner，只能在为 APK 文件签名之前执行 zipalign。如果您在使用 apksigner 为 APK 签名之后对 APK 做出了进一步更改，签名便会失效。
+     * 如果您使用的是 jarsigner，只能在为 APK 文件签名之后执行 zipalign。
+     *
      *
      * @param apkFilePath 对齐前包路径
      * @return 对齐后包路径
@@ -236,13 +293,11 @@ public class ApkHandler {
 
 
 
-        Command.execute(commandList, iPrintable);
+            Command.execute(commandList, iPrintable);
 
 
 
-
-
-          cmd = (showCommandDetail ? " -v " : "") + " -c    4  " +  "  " + zipAlignedFilePath;  //
+        cmd = (showCommandDetail ? " -v " : "") + " -c    4  " +  "  " + zipAlignedFilePath;  //
 
 
         commandList.clear();
@@ -378,7 +433,7 @@ public class ApkHandler {
 
     public void clearFramework() throws CmdExecuteException {
         printMessage("==================清除缓存文件================");
-        String cmd = apkToolDirectory +"apktool empty-framework-dir";
+        String cmd = apkToolDirectory +"apktool empty-framework-dir --force";
         iPrintable.println();
         printMessage("清除缓存文件", cmd);
         Command.executeCmd(new String[]{cmd}, iPrintable);

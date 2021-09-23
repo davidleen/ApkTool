@@ -29,11 +29,11 @@ public class Command {
 
             int value = process.waitFor();
             if (value != 0) {
-                throw new CmdExecuteException("cnd 执行失败,返回错误");
+                throw new CmdExecuteException(value,"cnd 执行失败,返回错误:"+value);
 
             }
         } catch (Exception e) {
-            throw new CmdExecuteException("编译出现错误：" + e.getMessage());
+            throw new CmdExecuteException(e.hashCode(),"编译出现错误：" + e.getMessage());
         }
 
     }
@@ -64,7 +64,7 @@ public class Command {
             if (exitVal != 0) {
 
 
-                throw new CmdExecuteException("cmd 执行失败,返回错误");
+                throw new CmdExecuteException(exitVal,"cmd 执行失败,返回错误:"+exitVal);
 
             }
 
@@ -72,7 +72,7 @@ public class Command {
         } catch (Exception e) {
 
 
-            throw new CmdExecuteException("编译出现错误：" + e.getMessage());
+            throw new CmdExecuteException(e.hashCode(),"编译出现错误：" + e.getMessage());
 
         }
 

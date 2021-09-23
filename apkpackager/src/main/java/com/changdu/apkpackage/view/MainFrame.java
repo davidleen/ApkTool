@@ -3,6 +3,7 @@ package com.changdu.apkpackage.view;
 import com.changdu.apkpackage.*;
 import com.changdu.apkpackage.dom.StringUtil;
 import com.changdu.apkpackage.entity.ConfigData;
+import com.changdu.apkpackage.entity.ResourceValue;
 import com.changdu.apkpackage.entity.StoreFileConfig;
 import com.changdu.apkpackage.entity.StoreFileHistory;
 import com.changdu.apkpackage.utlis.FileUtil;
@@ -153,7 +154,9 @@ public class MainFrame extends JFrame {
             @Override
             public void onPickApkTool() {
 
+
                 File preSelectFile = getPreSelectedFile(configData.apkToolPath);
+
                 File file = FileUtil.getSelectedDirectory(preSelectFile);
                 if (file != null && file.exists()) {
                     configData.apkToolPath = file.getAbsolutePath() + File.separator;
@@ -183,12 +186,90 @@ public class MainFrame extends JFrame {
             }
 
             @Override
+            public void addNewResource() {
+
+                JDialog dialog=new JDialog(MainFrame.this,"修改资源配置");
+                Panel_UpdateResource panel_updateResource = new Panel_UpdateResource(dialog);
+                dialog.setContentPane(panel_updateResource.root);
+                dialog.setPreferredSize(new Dimension(600,300));
+                dialog.setLocationRelativeTo(MainFrame.this);
+                dialog.pack();
+                dialog.setModal(true);
+                dialog.setVisible(true);
+                ResourceValue value = panel_updateResource.result;
+                if(value!=null)
+                {
+                    if( configData.updateValueList==null)
+                    {
+                        configData.updateValueList=new ArrayList<>();
+                    }
+                    configData.updateValueList.add(value);
+                    bindData();
+
+                }
+
+
+
+            }
+
+            @Override
+            public void onRemoveResource(String text) {
+
+                if( configData.updateValueList!=null)
+                {
+
+
+                    List<ResourceValue> values=new ArrayList<>();
+                    int size = configData.updateValueList.size();
+                    for (int i = 0; i < size; i++) {
+
+                        ResourceValue resourceValue = configData.updateValueList.get(i);
+                        if (resourceValue.toString().equalsIgnoreCase(text)) {
+
+
+
+                            values.add(resourceValue);
+                        }
+
+
+
+                    }
+
+                    configData.updateValueList.removeAll(values);
+                    bindData();
+
+
+
+
+                }
+
+                bindData();
+
+
+            }
+
+            @Override
             public void onPickChannelFile() {
 
                 File preSelectFile = getPreSelectedFile(configData.channelFilePath);
                 File file = FileUtil.getSelectedFilePath(preSelectFile);
                 if (file != null && file.exists()) {
                     configData.channelFilePath = file.getAbsolutePath()  ;
+                    bindData();
+
+                }
+
+
+            }
+
+
+            @Override
+            public void onPickChannelDirectory() {
+
+                File preSelectFile = getPreSelectedFile(configData.channelDirectory);
+                File file = FileUtil.getSelectedDirectory(preSelectFile);
+                if (file != null && file.exists()) {
+                    configData.channelDirectory = file.getAbsolutePath()  ;
                     bindData();
 
                 }
@@ -315,6 +396,26 @@ public class MainFrame extends JFrame {
 
             }
         });
+
+
+
+        menuItem = new JMenuItem("资源抽取");
+
+        menu.add(menuItem);
+
+        menuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                final ResourceExtractorFrame frame=new ResourceExtractorFrame("资源抽取");
+                frame.setSize(new Dimension(800,600));
+                frame.setLocationRelativeTo(rootPane);
+                frame.setVisible(true);
+
+
+            }
+        });
+
         setJMenuBar(menuBar);
     }
 
@@ -326,6 +427,7 @@ public class MainFrame extends JFrame {
         configData.storepass = mainPanel.getStorePass();
         configData.keypass = mainPanel.getKeyPass();
         configData.alias = mainPanel.getAlias();
+
 
 
         if(!StringUtil.isEmpty(configData.keyStoreFilePath))
@@ -355,8 +457,10 @@ public class MainFrame extends JFrame {
             if (!StringUtil.isEmpty(jdkHome))
                 configData.jdkHomePath = jdkHome + File.separator;
         }
-
-
+        if(StringUtil.isEmpty(configData.apkToolPath))
+        {
+            configData.apkToolPath=new File("tool/").getAbsolutePath()+ File.separator;;
+        }
         //读取缓存文件
         bindData();
 
@@ -625,7 +729,18 @@ public class MainFrame extends JFrame {
     private void doNormal(MainPanel.Options options) throws CmdExecuteException {
 
 
-        if (options.changePackage || options.sign || options.changeVersion || options.align) {
+        if(options.searchChannel&&options.pickChannelFile)
+        {
+
+
+            showMessage("指定渠道文件 和  搜索渠道xls 不能同时选中。");
+
+            return ;
+        }
+
+
+
+        if (options.changePackage || options.sign || options.changeVersion  ) {
 
             ApkHandler apkHandler = new ApkHandler(configData, printJob);
 
@@ -633,15 +748,18 @@ public class MainFrame extends JFrame {
             String outputFilePath = configData.apkFilePath;
 
             File apkFile = new File(outputFilePath);
+            String apkDecompiledDirectory = apkFile.getParent() + File.separator + "temp" + File.separator;
             //最终目标路径
             String apkDestDirectory = apkFile.getParent() + File.separator + "out" + File.separator;
             FileUtil.deleteAllFiles(apkDestDirectory);
 
 
-            if (options.changeVersion || options.changePackage) {
+            String oldPackageName=null;
+            boolean doUnPack = options.changeVersion || options.changePackage || options.searchChannel || options.updateResource;
+            if (doUnPack) {
 
 
-                String apkDecompiledDirectory = apkFile.getParent() + File.separator + "temp" + File.separator;
+
                 FileUtil.deleteAllFiles(apkDecompiledDirectory);
 
                 apkHandler.deCompile(configData.apkFilePath, apkDecompiledDirectory);
@@ -656,17 +774,31 @@ public class MainFrame extends JFrame {
                 }
 
                 ApkResourceHandler apkResourceHandler = new ApkResourceHandler(apkDecompiledDirectory, printJob);
-
+                oldPackageName=apkResourceHandler.readpackageName();
                 if (options.changePackage) {
                     String packageName = mainPanel.getPackageName();
-
                     apkResourceHandler.changePackageName(packageName);
+                    oldPackageName=packageName;
                 }
+                String[] oldVersion = null;
+                String newVersionCode="";
+                String newVersionName="";
                 if (options.changeVersion) {
-                    String newVersionCode = mainPanel.getVersionCode();
-                    String newVersionName = mainPanel.getVersionName();
-                    apkResourceHandler.changeVersionCodeAndName(newVersionCode, newVersionName);
+                      newVersionCode = mainPanel.getVersionCode();
+                      newVersionName = mainPanel.getVersionName();
+                     oldVersion=new String[2];
+                    apkResourceHandler.changeVersionCodeAndName(newVersionCode, newVersionName,oldVersion);
                 }
+
+
+
+                if(options.updateResource) {
+                    if (configData.updateValueList != null && configData.updateValueList.size() > 0) {
+                        apkResourceHandler.updateResourceValue(configData.updateValueList, printJob);
+                    }
+                }
+
+
 
                 apkHandler.bundleUp(apkDecompiledDirectory);
 
@@ -686,68 +818,180 @@ public class MainFrame extends JFrame {
 
                 }
 
-                outputFilePath = apkDestDirectory + apkFile.getName();
+
+
+
+
+
+
+
+
+
+
+
+                String newApkFileName=apkFile.getName();
+                //如果修改了版本号，同时调整文件名中的版本信息。
+                if(oldVersion!=null)
+                {
+                    if(!StringUtil.isEmpty(oldVersion[0]))
+                    {
+                        newApkFileName=  newApkFileName.replace("_"+oldVersion[0],"_"+newVersionCode);
+                    }
+                    if(!StringUtil.isEmpty(oldVersion[1]))
+                    {
+                        newApkFileName=  newApkFileName.replace(VERSION_PREFIX+oldVersion[1],VERSION_PREFIX+newVersionName);
+                        String prefix=VERSION_PREFIX.toLowerCase();
+                        newApkFileName=  newApkFileName.replace(prefix+oldVersion[1],prefix+newVersionName);
+                    }
+                }
+                outputFilePath = apkDestDirectory +newApkFileName ;
+
                 boolean result = FileUtil.move(unSignApkFilePath, outputFilePath);
                 printJob.println("文件移动：" + outputFilePath + ",result:" + result);
 
 
+            }else
+            {
+               String destFilePath = apkDestDirectory + apkFile.getName();
+                FileUtil.copyFile(outputFilePath, destFilePath);
+                outputFilePath=destFilePath;
+
             }
 
 
-            if(options.pickChannelFile)
+            Map<String, String> channel=null;
+            if(options.searchChannel&&!StringUtil.isEmpty(configData.channelDirectory))
             {
 
-                apkHandler.appendFileToApk(outputFilePath,  configData.channelFilePath);
-
+                channel=getChanelFromFile(configData.channelDirectory,oldPackageName);
 
             }
 
 
-            if (options.sign) {
 
-                String signedApkFilePath = null;
+            //没有渠道  循环打包一次， 否则 循环打包 渠道次数
+            int loopTime = channel != null && channel.size() > 0 ? channel.size() : 1;
 
-                signedApkFilePath = apkHandler.signUp(outputFilePath);
+            //抓取出渠道键对值
+            String[] keys = null;
+            if (channel != null) {
+                keys = new String[channel.size()];
+                channel.keySet().toArray(keys);
+            }
 
-                outputFilePath = signedApkFilePath;
 
-                printJob.print();
+            String  unsignpath=outputFilePath;
+
+            //多渠道处理
+            for (int i = 0; i < loopTime; i++) {
 
 
-                if (!new File(signedApkFilePath).exists()) {
+                outputFilePath=unsignpath;
+                if (keys != null && keys.length > 0) {
 
-                    showMessage("apk包签名失败");
-                    return;
+                    //多渠道 ，每个apk 都需要独立复制一份
+                    String newOutPutFile = ApkHandler.splitFileName(outputFilePath, "_" + keys[i]);
+                    FileUtil.copyFile(outputFilePath, newOutPutFile);
+
+                    //渠道文件生成
+                    String channelFile = ChannelHelper.createChannelFile(apkDecompiledDirectory, channel.get(keys[i]));
+                    //追加到apk文件中
+                    apkHandler.appendFileToApk(newOutPutFile, channelFile);
+
+
+                    outputFilePath = newOutPutFile;
+
+                }
+
+
+                if (options.pickChannelFile) {
+
+                    apkHandler.appendFileToApk(outputFilePath, configData.channelFilePath);
+
+
+                }
+
+
+//                if (options.sign) {
+//
+//                    String signedApkFilePath = null;
+//
+//                    signedApkFilePath = apkHandler.jarSignUp(outputFilePath);
+//
+//                    outputFilePath = signedApkFilePath;
+//
+//                    printJob.print();
+//
+//
+//                    if (!new File(signedApkFilePath).exists()) {
+//
+//                        showMessage("apk包签名失败");
+//                        return;
+//                    }
+//                }
+
+
+//                if (options.align)
+                if (doUnPack)
+                {
+                    //第六步  对齐
+                    String alignedApkFilePath = null;
+
+                    try {
+                        //第六步  对齐
+                        alignedApkFilePath = apkHandler.zipAlign(outputFilePath);
+
+                    } catch (CmdExecuteException e) {
+                        e.printStackTrace();
+                        if (e.code==1) {
+                            //对已经签名包 执行对齐会报错， 这里返回1， 忽略错误。
+                            alignedApkFilePath=outputFilePath;
+                        }else
+                        {
+                            throw e;
+                        }
+                    }
+
+
+                    outputFilePath = alignedApkFilePath;
+                    printJob.print();
+
+                    if (!new File(alignedApkFilePath).exists()) {
+
+                        showMessage("apk包对齐失败");
+                        return;
+                    }
+                }
+
+
+                if (options.sign) {
+
+                    String signedApkFilePath = null;
+
+                    signedApkFilePath = apkHandler.apkSignUp(outputFilePath);
+
+                    outputFilePath = signedApkFilePath;
+
+                    printJob.print();
+
+
+                    if (!new File(signedApkFilePath).exists()) {
+
+                        showMessage("apk包签名失败");
+                        return;
+                    }
+                }
+
+
+
+                String finalPath = apkFile.getParent() + File.separator + "out" + File.separator +"final"+File.separator+ new File(outputFilePath).getName();
+                if (!outputFilePath.equals(finalPath)) {
+
+                    boolean result = FileUtil.move(outputFilePath, finalPath);
+                    printJob.println("文件移动：" + finalPath + ",result:" + result);
+                    outputFilePath = finalPath;
                 }
             }
-
-
-            if (options.align) {
-                //第六步  对齐
-                String alignedApkFilePath = null;
-
-                alignedApkFilePath = apkHandler.zipAlign(outputFilePath);
-
-
-                outputFilePath = alignedApkFilePath;
-                printJob.print();
-
-                if (!new File(alignedApkFilePath).exists()) {
-
-                    showMessage("apk包对齐失败");
-                    return;
-                }
-            }
-
-
-            String finalPath = apkFile.getParent() + File.separator + "out" + File.separator + new File(outputFilePath).getName();
-            if (!outputFilePath.equals(finalPath)) {
-
-                boolean result = FileUtil.move(outputFilePath, finalPath);
-                printJob.println("文件移动：" + finalPath + ",result:" + result);
-                outputFilePath = finalPath;
-            }
-
 
             int option = JOptionPane.showConfirmDialog(this, "文件路径在:\n" + outputFilePath + ",  \n是否前往文件夹?", "操作成功", JOptionPane.YES_NO_OPTION);
             if (option == JOptionPane.OK_OPTION) {
@@ -899,7 +1143,13 @@ public class MainFrame extends JFrame {
 
 
 
-                        Map<String, String> channel = ChannelHelper.getChannelMap(file, printJob);
+                        Map<String, String> channel=null;
+                        if(options.searchChannel&&!StringUtil.isEmpty(configData.channelDirectory))
+                        {
+
+                              channel=getChanelFromFile(configData.channelDirectory,file.getName());
+
+                        }
 
 
                         apkResourceHandler.resetResources();
@@ -920,6 +1170,7 @@ public class MainFrame extends JFrame {
 
 
                         //合成后未签名的包地址。
+                        String[] oldVersion;
                         String versionPath="";
                         String unSignApkFilePath = apkDecompiledDirectory + "dist" + File.separator +appName+"-"+ file.getName();
                         if (options.changeVersion) {
@@ -927,8 +1178,8 @@ public class MainFrame extends JFrame {
                             String versionName = mainPanel.getVersionName();
                             versionPath= VERSION_PREFIX + versionName;
                             unSignApkFilePath = unSignApkFilePath +versionPath ;
-
-                            apkResourceHandler.changeVersionCodeAndName(versionCode, versionName);
+                            oldVersion=new String[2];
+                            apkResourceHandler.changeVersionCodeAndName(versionCode, versionName,oldVersion);
 
                         }else
                         {
@@ -946,7 +1197,7 @@ public class MainFrame extends JFrame {
 
                         if (!new File(unSignApkFilePath).exists()) {
 
-                            showMessage("apk重新打包失败");
+                            showMessage("apk重新打包失败"+"\n 如果errlog.txt 文件中出现 -v4 相关的信息，左上角菜单，清除下下框架缓存。");
                             return;
                         }
 
@@ -1004,10 +1255,62 @@ public class MainFrame extends JFrame {
 
 
 
+//                            {
+//                                if (options.sign) {
+//                                    //第五步 签名
+//                                    String signedApkFilePath = apkHandler.jarSignUp(outPutFile);
+//                                    outPutFile = signedApkFilePath;
+//                                    printJob.print();
+//
+//
+//                                    if (!new File(signedApkFilePath).exists()) {
+//
+//                                        showMessage("apk包签名失败");
+//                                        return;
+//                                    }
+//
+//                                }
+//                            }
+
+
+                            {
+//                                if (options.align)
+                                {
+                                    String alignedApkFilePath = null;
+
+                                    try {
+                                        //第六步  对齐
+                                        alignedApkFilePath = apkHandler.zipAlign(outPutFile);
+
+                                    } catch (CmdExecuteException e) {
+                                        e.printStackTrace();
+                                        if (e.code==1) {
+                                            //对已经签名包 执行对齐会报错， 这里返回1， 忽略错误。
+                                            alignedApkFilePath=outPutFile;
+                                        }else
+                                        {
+                                            throw e;
+                                        }
+                                    }
+                                    outPutFile = alignedApkFilePath;
+                                    printJob.print();
+
+                                    if (!new File(alignedApkFilePath).exists()) {
+
+                                        showMessage("apk包对齐失败");
+                                        return;
+                                    }
+                                }
+                            }
+
+
+
+
+
                             {
                                 if (options.sign) {
                                     //第五步 签名
-                                    String signedApkFilePath = apkHandler.signUp(outPutFile);
+                                    String signedApkFilePath = apkHandler.apkSignUp(outPutFile);
                                     outPutFile = signedApkFilePath;
                                     printJob.print();
 
@@ -1018,24 +1321,6 @@ public class MainFrame extends JFrame {
                                         return;
                                     }
 
-                                }
-                            }
-
-
-                            {
-                                if (options.align) {
-
-                                    //第六步  对齐
-                                    String alignedApkFilePath = apkHandler.zipAlign(outPutFile);
-
-                                    outPutFile = alignedApkFilePath;
-                                    printJob.print();
-
-                                    if (!new File(alignedApkFilePath).exists()) {
-
-                                        showMessage("apk包对齐失败");
-                                        return;
-                                    }
                                 }
                             }
 
@@ -1081,6 +1366,10 @@ public class MainFrame extends JFrame {
     }
 
 
+
+
+
+
     private void showMessage(String message) {
         mainPanel.setEdiable(true);
         mainPanel.showMessage(message);
@@ -1118,5 +1407,48 @@ public class MainFrame extends JFrame {
         LocalFileHelper.set(history);
     }
 
+
+
+
+    private File searchFile(String filepath,String fileName)
+    {
+
+
+        File file = new File(filepath);
+        if(file.isDirectory())
+        {
+
+            File[] files=file.listFiles();
+            for (File child:files)
+            {
+
+                File result=searchFile(child.getAbsolutePath(),fileName);
+                if(result!=null)
+                    return result;
+
+            }
+
+
+        }else
+        if(file.getName().equalsIgnoreCase(fileName))
+        {
+            return file;
+        }
+
+
+        return null;
+    }
+
+
+    private Map getChanelFromFile(String directory,String packageName)
+    {
+        File  xlsFile = searchFile(directory, "渠道id_" +packageName + ".xlsx") ;
+        if(xlsFile!=null)
+        {
+            return  ChannelHelper.getChannelMap(xlsFile, printJob);
+        }
+        return null;
+
+    }
 
 }

@@ -1,6 +1,10 @@
 package com.changdu.apkpackage.entity;
 
+
+import java.beans.Transient;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ConfigData implements Serializable {
 
@@ -46,4 +50,12 @@ public class ConfigData implements Serializable {
     public boolean useNewPackageName;
 
 
+    /**
+     * 搜索渠道xls文件的目录
+     */
+    public  String  channelDirectory;
+
+
+
+    public transient List<ResourceValue> updateValueList ;
 }

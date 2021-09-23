@@ -5,7 +5,9 @@ package com.changdu.apkpackage;
  */
 public class CmdExecuteException extends Exception {
 
-    public CmdExecuteException(String message) {
+        public   int code;
+    public CmdExecuteException(int code, String message) {
         super(message);
+        this.code = code;
     }
 }

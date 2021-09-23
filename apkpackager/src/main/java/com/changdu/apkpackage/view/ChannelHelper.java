@@ -16,18 +16,8 @@ import java.util.Map;
 public class ChannelHelper {
 
 
-    public static Map<String, String> getChannelMap(File file, IPrintable printable) {
+    public static Map<String, String> getChannelMap(File xlsFile, IPrintable printable) {
 
-        String fileName = file.getName();
-        File xlsFile = new File(file.getParent() + File.separator + "渠道id_" + fileName + ".xlsx");
-
-        if(!xlsFile.exists())
-        {
-
-              xlsFile = new File(file.getParentFile().getParent() +File.separator+"渠道值"+ File.separator + "渠道id_" + fileName + ".xlsx");
-
-
-        }
 
         if (xlsFile.exists()) {
 

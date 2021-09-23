@@ -1,7 +1,9 @@
 package com.changdu.apkpackage;
 
+
 import com.changdu.apkpackage.dom.DomXml;
 import com.changdu.apkpackage.dom.StringUtil;
+import com.changdu.apkpackage.entity.ResourceValue;
 import com.changdu.apkpackage.utlis.FileUtil;
 import org.w3c.dom.*;
 
@@ -10,6 +12,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.apache.commons.text.StringEscapeUtils;
+
+import javax.annotation.Resource;
 
 /**
  * 资源替换处理类
@@ -22,10 +27,25 @@ public class ApkResourceHandler {
 
     private static final String ANDROID_MANIFEST_XML = "AndroidManifest.xml";
     private static final String STRING_XML = "strings.xml";
+    private static final String INTEGER_XML = "integers.xml";
+    private static final String BOOL_XML = "bools.xml";
     private static final String ATTR_PACKAGE = "package";
     private static final String ATTR_VERSION_CODE = "android:versionCode";
     private static final String ATTR_VERSION_NAME = "android:versionName";
+
+
+    /**
+     * 解压后的manifest文件， 旧的versioncode 在这个字段。
+     */
+    private static final String ATTR_PLATFORM_VERSION_CODE = "platformBuildVersionCode";
+
+    /**
+     * 解压后的manifest文件， 旧的versionname 在这个字段。
+     */
+    private static final String ATTR_PLATFORM_VERSION_NAME = "platformBuildVersionName";
+
     private static final String ATTR_ANDOIRD_NAME = "android:name";
+    private static final String ATTR_ANDOIRD_VALUE = "android:value";
     private static final String ATTR_NAME = "name";
 
     private static final String RES = "res";
@@ -159,12 +179,16 @@ public class ApkResourceHandler {
 
 
                             if (file.getName().equals(typeFiles[i])) {
-                                throw new CmdExecuteException("打包文档中的文件，不应该存在" + typeFiles[i] + "这样的文件");
+                                throw new CmdExecuteException(0,"打包文档中的文件，不应该存在" + typeFiles[i] + "这样的文件");
                             }
                             //找到对应文件接下 对应类型的资源文件  values[-*]*
 
                             List<String> nodeNames = readNodeNamesInNewFile(types[i], file.getAbsolutePath());
                             String stringsFilePath = destFile.getParent() + File.separator + typeFiles[i];
+
+
+
+                            backFile(stringsFilePath);
                             removeXmlNode(nodeNames, stringsFilePath);
 
 
@@ -267,7 +291,6 @@ public class ApkResourceHandler {
         if (!new File(xmlFilePath).exists()) return;
 
 
-        backFile(xmlFilePath);
 
         DomXml domXml = new DomXml(xmlFilePath);
         Document doc = domXml.openFile();
@@ -313,6 +336,34 @@ public class ApkResourceHandler {
         domXml.close();
 
 
+    }
+
+    /**
+     * 读取包名
+     * @return
+     */
+    public String readpackageName()
+    {
+        String manifestFilePath = apkFileDirectory + File.separator + ANDROID_MANIFEST_XML;
+        String oldPackageName = "";
+        DomXml domXml = new DomXml(manifestFilePath);
+        Document doc = domXml.openFile();
+
+        if (doc != null) {
+            Node manifest = doc.getFirstChild();
+            if (manifest != null && manifest.hasAttributes()) {
+                NamedNodeMap attr = manifest.getAttributes();
+                Node nodeAttr = attr.getNamedItem(ATTR_PACKAGE);
+                oldPackageName=  nodeAttr.getTextContent();
+
+            }
+
+        }
+        domXml.saveFile(doc);
+
+
+        domXml.close();
+        return oldPackageName;
     }
 
 
@@ -424,7 +475,13 @@ public class ApkResourceHandler {
     }
 
 
-    public void changeVersionCodeAndName(String newVersionCode, String newVersionName) {
+    /**
+     * 修改版本号，更好的方式去修改 apktool.yml  这个文件。  这里简单处理， 直接manifest塞属性。
+     * @param newVersionCode
+     * @param newVersionName
+     * @param outPut
+     */
+    public void changeVersionCodeAndName(String newVersionCode, String newVersionName,String[] outPut) {
 
         iPrintable.println("==================修改版本号================versionCode:" + newVersionCode + ",versionName:" + newVersionName);
         String manifestFilePath = apkFileDirectory + File.separator + ANDROID_MANIFEST_XML;
@@ -440,21 +497,29 @@ public class ApkResourceHandler {
             if (manifest != null) {
                 Node versionCodeAttr = null;
                 Node versionNameAttr = null;
+                Node oldVersionCodeAttr=null;
+                Node oldVerrsionNameAttr=null;
                 if (manifest.hasAttributes()) {
                     NamedNodeMap attr = manifest.getAttributes();
                     versionCodeAttr = attr.getNamedItem(ATTR_VERSION_CODE);
                     versionNameAttr = attr.getNamedItem(ATTR_VERSION_NAME);
+                    oldVersionCodeAttr = attr.getNamedItem(ATTR_PLATFORM_VERSION_CODE);
+                    oldVerrsionNameAttr = attr.getNamedItem(ATTR_PLATFORM_VERSION_NAME);
 
 
                 }
                 if (versionCodeAttr == null) {
                     ((Element) manifest).setAttribute(ATTR_VERSION_CODE, newVersionCode);
+                    outPut[0]=oldVersionCodeAttr==null?"":oldVersionCodeAttr.getTextContent();
                 } else {
+                    outPut[0]=versionCodeAttr.getTextContent();
                     versionCodeAttr.setTextContent(newVersionCode);
                 }
                 if (versionNameAttr == null) {
                     ((Element) manifest).setAttribute(ATTR_VERSION_NAME, newVersionName);
+                    outPut[1]=oldVerrsionNameAttr==null?"":oldVerrsionNameAttr.getTextContent();
                 } else {
+                    outPut[1]=versionNameAttr.getTextContent();
                     versionNameAttr.setTextContent(newVersionName);
                 }
 
@@ -468,6 +533,100 @@ public class ApkResourceHandler {
 
 
     }
+
+
+    /**
+     * 修改版本号，更好的方式去修改 apktool.yml  这个文件。  这里简单处理， 直接manifest塞属性。
+     * @param meta_data
+     * @param value
+     * @return  do update
+     */
+    public boolean updateMetaDataOnManifest(String meta_data,String value) {
+
+        iPrintable.println("==================修改Manifest文件中Meta-data================meta_data:" + meta_data + ",value:" + value);
+        String manifestFilePath = apkFileDirectory + File.separator + ANDROID_MANIFEST_XML;
+        DomXml domXml=null;
+        boolean result = false;
+        try {
+            domXml = new DomXml(manifestFilePath);
+
+
+            Document doc = domXml.openFile();
+
+            if (doc != null) {
+                Node manifest = doc.getFirstChild();
+
+
+                if (manifest != null) {
+
+                    Node application = null;
+                    NodeList childNodes = manifest.getChildNodes();
+                    for (int i = 0, size = childNodes.getLength(); i < size; i++) {
+
+                        Node child = childNodes.item(i);
+
+
+                        if (child.getNodeName().equalsIgnoreCase("application")) {
+                            application = child;
+                            break;
+                        }
+
+
+                    }
+
+
+                    if (application != null) {
+                        childNodes = application.getChildNodes();
+                        for (int i = 0, size = childNodes.getLength(); i < size; i++) {
+
+                            Node child = childNodes.item(i);
+
+                            if (child.getNodeName().equalsIgnoreCase("meta-data")) {
+
+                                NamedNodeMap destAttr = child.getAttributes();
+                                if (destAttr == null) continue;
+                                final Node destNameAttr = destAttr.getNamedItem(ATTR_ANDOIRD_NAME);
+                                if (destNameAttr == null) continue;
+                                if (destNameAttr.getNodeValue().equalsIgnoreCase(meta_data)) {
+
+                                    Node namedItem = destAttr.getNamedItem(ATTR_ANDOIRD_VALUE);
+                                    if (namedItem != null) {
+                                        namedItem.setNodeValue(value);
+                                        result = true;
+                                    }
+
+                                }
+
+
+                            }
+
+
+                        }
+                    }
+
+
+                }
+            }
+            domXml.saveFile(doc);
+        }catch (Throwable t)
+        {
+            t.printStackTrace();
+        }finally {
+
+            if(domXml!=null)
+                domXml.close();
+        }
+
+
+
+
+        return result;
+
+    }
+
+
+
+
 
     /**
      * 解包后 源文件备份， 任务完成后可以恢复原样。
@@ -693,33 +852,60 @@ public class ApkResourceHandler {
      * @param appName
      */
     public void changeApkName(String appName,IPrintable iPrintable) {
-        String stringvaluexml = apkFileDirectory+File.separator + RES_VALUES_DIRECTORY +File.separator+ STRING_XML;
+
+        boolean  changeApkName=false;
+        changeApkName=updateResourceValue("app_name","string",appName,iPrintable);
+
+        iPrintable.println("应用名称修改:"+changeApkName+ "  ===="+appName);
+
+
+    }
+
+    /**
+     *
+     * @param key
+     */
+    private boolean updateResourceValue(String key,String type,String value,IPrintable iPrintable) {
+
+
+
+        String stringvaluexml = apkFileDirectory + File.separator + RES_VALUES_DIRECTORY + File.separator + type+"s.xml";
+
+        return updateResourceValue(key,type,value,stringvaluexml,iPrintable);
+
+    }
+    /**
+     *
+     * @param key
+     */
+    private boolean updateResourceValue(String key,String type,String value,String filePath,IPrintable iPrintable) {
+        String stringvaluexml =filePath;// apkFileDirectory+File.separator + RES_VALUES_DIRECTORY +File.separator+ STRING_XML;
 
 
         DomXml domXml = new DomXml(stringvaluexml);
 
 
-        boolean  changeApkName=false;
+        boolean  hasUpdate=false;
         Document doc = domXml.openFile();
 
         if (doc != null) {
             Node node = doc.getFirstChild();
 
             if (node != null) {
-              NodeList nodeList=  node.getChildNodes();
+                NodeList nodeList=  node.getChildNodes();
                 for (int i = 0; i < nodeList.getLength(); i++) {
 
 
                     Node childNode=nodeList.item(i);
-                    if("string".equalsIgnoreCase(childNode.getNodeName())&& childNode.hasAttributes())
+                    if(type.equalsIgnoreCase(childNode.getNodeName())&& childNode.hasAttributes())
                     {
                         NamedNodeMap attributes = childNode.getAttributes();
                         if (attributes == null) continue;
                         Node nameItem = attributes.getNamedItem(ATTR_NAME);
                         if(nameItem ==null)continue;
-                        if ("app_name".equalsIgnoreCase(nameItem.getNodeValue())) {
-                            childNode.setTextContent(appName);
-                            changeApkName = true;
+                        if (key.equalsIgnoreCase(nameItem.getNodeValue())) {
+                            childNode.setTextContent(value);
+                            hasUpdate = true;
                             break;
                         }
 
@@ -736,7 +922,266 @@ public class ApkResourceHandler {
 
         domXml.close();
 
-        iPrintable.println("应用名称修改:"+changeApkName+ "  ===="+appName);
+        return hasUpdate;
+
+
+    }
+
+
+
+
+
+
+
+    /**
+     *  遍历所有filepath中的节点，抽取apk临时文件夹中的资源，替换。
+     * @param filePath
+     * @param language
+     */
+    public void extractStringResource(String filePath, String language) {
+
+        String defaultStringXmlFilePath=   apkFileDirectory+File.separator + RES_VALUES_DIRECTORY +File.separator+ STRING_XML;
+        String languageXmlFilePath=  apkFileDirectory+File.separator + RES_VALUES_DIRECTORY +"-"+language+File.separator+ STRING_XML;
+
+
+        DomXml defaultStringDomXml=new DomXml(defaultStringXmlFilePath);
+        Document defaultDocument = defaultStringDomXml.openFile();
+        DomXml languageStringDomXml=new DomXml(languageXmlFilePath);
+        Document languagueDocument = languageStringDomXml.openFile();
+
+        DomXml domXml = new DomXml(filePath);
+        Document doc = domXml.openFile();
+        if (doc != null) {
+            Node firstChild = doc.getFirstChild();
+            if (firstChild.hasChildNodes()) {
+                NodeList childNodes = firstChild.getChildNodes();
+
+                int childNodeCount = childNodes.getLength();
+                for (int i = 0; i < childNodeCount; i++) {
+                    Node node = childNodes.item(i);
+                    //找到对应的类型节点。
+                    Node stringNameNode = node.getAttributes() == null ? null : node.getAttributes().getNamedItem(ATTR_NAME);
+                    if (stringNameNode != null ) {
+                        String nodeValue = stringNameNode.getNodeValue();
+
+                        String content=getStringNodeValue(languagueDocument,nodeValue);
+                        if(content==null)
+                        {
+                            content=getStringNodeValue(defaultDocument,nodeValue);
+                        }
+                        if(content!=null) {
+                            node.setTextContent(StringEscapeUtils.escapeXml10(content));
+                        }
+
+                    }
+
+
+                }
+
+
+
+
+
+                    domXml.saveFile(doc);
+
+
+
+
+            }
+            domXml.close();
+
+        }
+
+
+
+
+
+
+
+
+
+
+    }
+
+
+
+
+    /**
+     *  遍历所有filepath中的节点，抽取apk临时文件夹中的资源，替换。
+     * @param filePath
+     */
+    public void extractStringResource(String filePath,boolean clearSourceNode) {
+
+
+        File directory=new File(apkFileDirectory);
+        if(directory.isDirectory())
+        {
+
+
+            for (File file:directory.listFiles())
+            {
+
+                if(file.getName().endsWith(".xml")) {
+
+
+                    DomXml defaultStringDomXml = new DomXml(file.getPath());
+                    System.out.println("filePath:"+file.getPath());
+                    Document defaultDocument = defaultStringDomXml.openFile();
+                    DomXml domXml = new DomXml(filePath);
+                    Document doc = domXml.openFile();
+                    List<String> nodesRetrieve=new ArrayList<>();
+                    if (doc != null) {
+                        Node firstChild = doc.getFirstChild();
+                        if (firstChild.hasChildNodes()) {
+                            NodeList childNodes = firstChild.getChildNodes();
+
+                            int childNodeCount = childNodes.getLength();
+                            for (int i = 0; i < childNodeCount; i++) {
+                                Node node = childNodes.item(i);
+
+
+                                //找到对应的类型节点。
+                                Node stringNameNode = node.getAttributes() == null ? null : node.getAttributes().getNamedItem(ATTR_NAME);
+                                if (stringNameNode != null) {
+                                    String nodeValue = stringNameNode.getNodeValue();
+                                    String content = getStringNodeValue(defaultDocument, nodeValue);
+
+                                    if (content != null) {
+                                        System.out.println("nodeValue:"+nodeValue+",content:"+content);
+                                        nodesRetrieve.add(nodeValue);
+                                        node.setTextContent(StringEscapeUtils.escapeXml10(content));
+                                    }
+
+                                }
+
+
+                            }
+
+
+                            domXml.saveFile(doc);
+
+
+                        }
+                        domXml.close();
+                        defaultStringDomXml.close();
+
+                    }
+                   if(clearSourceNode&&nodesRetrieve.size()>0)
+                    {
+                        removeXmlNode(nodesRetrieve,file.getPath());
+                     }
+
+                }
+            }
+
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+    private static  final String getStringNodeValue(Document document,String nodeName )
+    {
+        return getNodeValue(document,nodeName,"string");
+    }
+
+
+    /**
+     * 获取节点对应的值。
+     * @param document
+     * @param nodeName
+     * @param nodeTag
+     * @return
+     */
+    private static  final String getNodeValue(Document document,String nodeName,String nodeTag)
+    {
+
+        Node node = document.getFirstChild();
+
+        if (node != null) {
+            NodeList nodeList=  node.getChildNodes();
+            int length = nodeList.getLength();
+            for (int i = 0; i < length; i++) {
+
+
+                Node childNode=nodeList.item(i);
+                if(nodeTag.equalsIgnoreCase(childNode.getNodeName())&& childNode.hasAttributes())
+                {
+                    NamedNodeMap attributes = childNode.getAttributes();
+                    if (attributes == null) continue;
+                    Node nameItem = attributes.getNamedItem(ATTR_NAME);
+                    if(nameItem ==null)continue;
+                    if (nodeName.equalsIgnoreCase(nameItem.getNodeValue())) {
+                        return  childNode.getTextContent();
+                    }
+
+                }
+            }
+
+
+
+        }
+        return null;
+
+
+
+
+    }
+
+    public void updateResourceValue(List<ResourceValue> updateValueList,IPrintable iPrintable) {
+
+
+        for (ResourceValue value:updateValueList)
+        {
+
+            boolean update=false;
+            if(value.type.equalsIgnoreCase(ResourceValue.TYPE_META_DATA))
+            {
+
+                update=updateMetaDataOnManifest(value.key,value.value);
+                iPrintable.println("修改Manifest资源meta-data值:"+value.toString()+ "  ===="+(update ? "成功" : "失败"));
+            }else {
+                update= updateResourceValue(value.key,value.type,value.value,iPrintable);
+
+                iPrintable.println("修改Res资源值:"+value.toString()+ "  ===="+(update ? "成功" : "失败"));
+            }
+
+
+
+
+
+
+
+
+        }
+
+
+
+
 
 
     }

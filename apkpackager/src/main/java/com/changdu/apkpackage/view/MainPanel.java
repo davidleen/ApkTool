@@ -5,10 +5,8 @@ import com.changdu.apkpackage.dom.StringUtil;
 import com.changdu.apkpackage.entity.ConfigData;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import java.awt.*;
+import java.awt.event.*;
 import java.io.File;
 
 /**
@@ -42,7 +40,6 @@ public class MainPanel implements TextView {
     private JTextField versionName;
     private JPanel panel_change_version;
     private JRadioButton rd_normal;
-    private JRadioButton rd_multi_channel;
     private JCheckBox cb_packageName;
     private JPanel panel_package;
     private JTextField packageName;
@@ -52,6 +49,14 @@ public class MainPanel implements TextView {
     private JPanel panel_channel;
     private JCheckBox jb_change_app_name;
     private JCheckBox jb_change_package_name;
+    private JCheckBox cb_xls_dir;
+    private JTextField jt_xls_dir;
+    private JButton pick_xls_dir;
+    private JPanel panel_xls_dir;
+    private JButton btn_add_res;
+    private JPanel jp_resource;
+    private JCheckBox cb_update_resource;
+    private JPanel panel_update_resouce;
 
 
     PanelListener panelListener;
@@ -76,6 +81,7 @@ public class MainPanel implements TextView {
 
             }
         });
+        cb_align.setVisible(false);
 
 
 
@@ -128,6 +134,26 @@ public class MainPanel implements TextView {
         panel_change_version.setVisible(false);
 
 
+        cb_update_resource.setSelected(false);
+        panel_update_resouce.setVisible(false);
+
+        final Dimension preferredSize = new Dimension(450   , 120);
+        panel_update_resouce.setPreferredSize(preferredSize);
+        panel_update_resouce.setMinimumSize(preferredSize);
+
+        cb_update_resource.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                boolean selected = cb_update_resource.isSelected();
+                panel_update_resouce.setMinimumSize(preferredSize);
+                panel_update_resouce.setPreferredSize(preferredSize);
+                panel_update_resouce.setVisible(selected);
+
+
+            }
+        });
+
+
         cb_packageName.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
@@ -144,10 +170,22 @@ public class MainPanel implements TextView {
         cb_packageName.setSelected(false);
         panel_package.setVisible(false);
 
+        cb_xls_dir.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                boolean selected = cb_xls_dir.isSelected();
+                panel_xls_dir.setVisible(selected);
+
+            }
+        });
+        cb_xls_dir.setSelected(false);
+        panel_xls_dir.setVisible(false);
+
+
+
         final ButtonGroup bg = new ButtonGroup();
         bg.add(rd_pack);
         bg.add(rd_normal);
-        bg.add(rd_multi_channel);
 
 
         rd_pack.addItemListener(new ItemListener() {
@@ -156,12 +194,18 @@ public class MainPanel implements TextView {
 
                 panel_pack.setVisible(rd_pack.isSelected());
                 cb_packageName.setVisible(!rd_pack.isSelected());
+                cb_update_resource.setVisible(!rd_pack.isSelected());
+                panel_update_resouce.setVisible(!rd_pack.isSelected());
                 if (rd_pack.isSelected()) {
                     cb_packageName.setSelected(false);
                     panel_package.setVisible(false);
+
+
                 }
                 cb_channel.setVisible(false);
                 panel_channel.setVisible(false);
+
+
 
             }
         });
@@ -174,16 +218,10 @@ public class MainPanel implements TextView {
                 cb_channel.setVisible(true);
                 panel_channel.setVisible(cb_channel.isSelected());
 
-            }
-        });
-        rd_multi_channel.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-
-                panel_pack.setVisible(false);
 
             }
         });
+
 
 
         rd_normal.setSelected(true);
@@ -191,6 +229,14 @@ public class MainPanel implements TextView {
             @Override
             public void actionPerformed(ActionEvent e) {
                 panelListener.onStoreFilePick();
+            }
+        });
+
+
+        btn_add_res.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panelListener.addNewResource();
             }
         });
 
@@ -217,10 +263,12 @@ public class MainPanel implements TextView {
 
 
                 Options options = new Options();
-                options.align = cb_align.isSelected();
+//                options.align = cb_align.isSelected();
                 options.changeVersion = cb_version.isSelected();
+                options.updateResource = cb_update_resource.isSelected();
                 options.sign = cb_sign.isSelected();
                 options.changePackage = cb_packageName.isSelected();
+                options.searchChannel = cb_xls_dir.isSelected();
                 options.pickChannelFile = cb_channel.isSelected();
 
                 if (type == 0) return;
@@ -242,6 +290,15 @@ public class MainPanel implements TextView {
                 panelListener.onPickChannelFile();
             }
         });
+
+        pick_xls_dir.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panelListener.onPickChannelDirectory();
+            }
+        });
+
+
         pickPack.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -281,6 +338,7 @@ public class MainPanel implements TextView {
         tf_apk.setText(StringUtil.isEmpty(configData.apkFilePath) ? "" : configData.apkFilePath);
         tf_apk_tool.setText(StringUtil.isEmpty(configData.apkToolPath) ? "" : configData.apkToolPath);
         tf_pack.setText(StringUtil.isEmpty(configData.apkPackPath) ? "" : configData.apkPackPath);
+        jt_xls_dir.setText(StringUtil.isEmpty(configData.channelDirectory) ? "" : configData.channelDirectory);
         tf_alias.setText(configData.alias);
         tf_keypass.setText(configData.keypass);
         tf_store_pass.setText(configData.storepass);
@@ -288,6 +346,7 @@ public class MainPanel implements TextView {
 
         jb_change_package_name.setSelected(configData.useNewPackageName);
         jb_change_app_name.setSelected(configData.useNewAppName);
+
 
         if (!StringUtil.isEmpty(configData.apkPackPath)) {
 
@@ -309,8 +368,39 @@ public class MainPanel implements TextView {
 
             ta_packages.setText(text.toString());
 
+
+
+
+
         } else {
             ta_packages.setText("");
+        }
+
+        jp_resource.removeAll();
+        if(configData.updateValueList!=null) {
+
+            for (int i = 0; i < configData.updateValueList.size(); i++) {
+
+
+                final JTextField jButton=new JTextField();jButton.setEditable(false);
+                jButton.setText(configData.updateValueList.get(i).toString());
+                jButton.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+
+                       if(e.getClickCount()==2) {
+                           panelListener.onRemoveResource(jButton.getText());
+                       }
+                    }
+                });
+
+
+
+                 jp_resource.add(jButton);
+
+
+            }
+            jp_resource.updateUI();
         }
 
 
@@ -384,19 +474,26 @@ public class MainPanel implements TextView {
 
         void onPickApkTool();
         void onPickChannelFile();
+        void onPickChannelDirectory();
 
         void onNewAppNameUse(boolean use);
         void onNewPackageNameUse(boolean use);
+
+        void addNewResource();
+
+        void onRemoveResource(String text);
     }
 
 
     public static class Options {
 
         boolean sign;
-        boolean align;
+//        boolean align;
         boolean changeVersion;
+        boolean updateResource;
         boolean changePackage;
         boolean pickChannelFile;
+        boolean searchChannel;
     }
 
     public void showMessage(String message) {
