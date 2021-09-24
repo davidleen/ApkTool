@@ -177,6 +177,25 @@ public class MainFrame extends JFrame {
 
             }
 
+
+            @Override
+            public void onAliasChange(String text) {
+                configData.alias=text;
+                saveToLocal();
+            }
+
+            @Override
+            public void onKeyPassChange(String text) {
+                configData.keypass=text;
+                saveToLocal();
+            }
+
+            @Override
+            public void onStorePassChange(String text) {
+                configData.storepass=text;
+                saveToLocal();
+            }
+
             @Override
             public void onNewPackageNameUse(boolean use) {
                 if(configData!=null) {
@@ -424,9 +443,6 @@ public class MainFrame extends JFrame {
 
 
         if (configData == null) configData = new ConfigData();
-        configData.storepass = mainPanel.getStorePass();
-        configData.keypass = mainPanel.getKeyPass();
-        configData.alias = mainPanel.getAlias();
 
 
 

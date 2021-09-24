@@ -314,24 +314,45 @@ public class MainPanel implements TextView {
         });
     }
 
-    public String getKeyPass() {
-        return tf_keypass.getText().trim();
-    }
 
-    public String getStorePass() {
-        return tf_store_pass.getText().trim();
-    }
 
-    public String getAlias() {
-        return tf_alias.getText().trim();
-    }
 
     public JPanel getRoot() {
         return root;
     }
 
+    DocumentUpdateAdapter storePassAdapter=new DocumentUpdateAdapter() {
+        @Override
+        protected void onUpdate(String text) {
+            panelListener.onStorePassChange(text);
+        }
+    }; DocumentUpdateAdapter keyPassAdapter=new DocumentUpdateAdapter() {
+        @Override
+        protected void onUpdate(String text) {
+            panelListener.onKeyPassChange(text);
+        }
+    }; DocumentUpdateAdapter aliasAdapter=new DocumentUpdateAdapter() {
+        @Override
+        protected void onUpdate(String text) {
+            panelListener.onAliasChange(text);
+        }
+    };
 
     public void setConfigData(ConfigData configData) {
+
+
+        tf_alias.getDocument().removeDocumentListener(aliasAdapter);
+        tf_alias.setText(configData.alias);
+        tf_alias.getDocument().addDocumentListener(aliasAdapter);
+
+        tf_keypass.getDocument().removeDocumentListener(keyPassAdapter);
+        tf_keypass.setText(configData.keypass);
+        tf_keypass.getDocument().addDocumentListener(keyPassAdapter);
+
+        tf_store_pass.getDocument().removeDocumentListener(storePassAdapter);
+        tf_store_pass.setText(configData.storepass);
+        tf_store_pass.getDocument().addDocumentListener(storePassAdapter);
+
 
         tf_store_file.setText(StringUtil.isEmpty(configData.keyStoreFilePath) ? "" : configData.keyStoreFilePath);
         tf_jdk.setText(StringUtil.isEmpty(configData.jdkHomePath) ? "" : configData.jdkHomePath);
@@ -339,9 +360,7 @@ public class MainPanel implements TextView {
         tf_apk_tool.setText(StringUtil.isEmpty(configData.apkToolPath) ? "" : configData.apkToolPath);
         tf_pack.setText(StringUtil.isEmpty(configData.apkPackPath) ? "" : configData.apkPackPath);
         jt_xls_dir.setText(StringUtil.isEmpty(configData.channelDirectory) ? "" : configData.channelDirectory);
-        tf_alias.setText(configData.alias);
-        tf_keypass.setText(configData.keypass);
-        tf_store_pass.setText(configData.storepass);
+
         tx_channel.setText(configData.channelFilePath);
 
         jb_change_package_name.setSelected(configData.useNewPackageName);
@@ -482,6 +501,12 @@ public class MainPanel implements TextView {
         void addNewResource();
 
         void onRemoveResource(String text);
+
+        void onAliasChange(String text);
+
+        void onKeyPassChange(String text);
+
+        void onStorePassChange(String text);
     }
 
 
